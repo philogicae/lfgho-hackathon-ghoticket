@@ -11,6 +11,12 @@ body {
   background: #050011;
 }
 
+.manual-y-center::before,
+.manual-y-center::after {
+  content: '';
+  margin: auto;
+}
+
 .halo-text {
-  text-shadow: 0 0 10px #ffffff;
+  text-shadow: 0 0 5px #ffffff;
 }
