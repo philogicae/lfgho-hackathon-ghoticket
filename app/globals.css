@@ -18,7 +18,11 @@ body {
 }
 
 .halo-text {
-  text-shadow: 0 0 5px #ffffff;
+  text-shadow: 0 0 10px #00ffff;
+}
+
+.halo-polygon {
+  filter: drop-shadow(0 0 5px #00ffff);
 }
 
 .sc-ecPEgm.fZsfzy {

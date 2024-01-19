@@ -38,7 +38,6 @@ export default function Web3Modal({ children }: { children: React.ReactNode }) {
     <WagmiConfig config={config}>
       <ConnectKitProvider
         theme="midnight"
-        mode="dark"
         options={{
           embedGoogleFonts: true,
           disclaimer: (
@@ -46,6 +45,15 @@ export default function Web3Modal({ children }: { children: React.ReactNode }) {
               GhoTicket is an experimental project
             </span>
           ),
+        }}
+        customTheme={{
+          '--ck-connectbutton-font-size': '15px',
+          '--ck-connectbutton-background': '#1E40AF',
+          '--ck-connectbutton-hover-background': '#1D4ED8',
+          '--ck-connectbutton-active-background': '#1D4ED8',
+          '--ck-font-family':
+            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          '--ck-qr-dot-color': '#00FFFF',
         }}
       >
         {children}

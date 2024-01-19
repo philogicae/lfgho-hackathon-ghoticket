@@ -33,7 +33,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
             <ConnectKitButton showBalance={true} />
           </div>
         </div>
-        <div className="flex flex-col w-full h-full items-start justify-center">
+        <div className="flex flex-col w-full h-full items-start justify-center pt-4 px-2">
           {children}
         </div>
         <div className="flex flex-row w-full h-9 items-center justify-between p-2 text-sm font-mono text-cyan-400">

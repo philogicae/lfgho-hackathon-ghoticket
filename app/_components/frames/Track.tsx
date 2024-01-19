@@ -1,8 +1,16 @@
 'use client'
+
+import Title from '@components/elements/Title'
+import { FaMagnifyingGlass } from 'react-icons/fa6'
+
 export default function Track() {
   return (
-    <div className="flex w-full h-full justify-center items-center">
-      <span className="text-2xl">Track page</span>
-    </div>
+    <>
+      <Title
+        label="Tracking"
+        logo={<FaMagnifyingGlass className="transform -scale-x-100" />}
+      />
+      <div className="flex flex-col w-full h-full border border-cyan-400 mt-2 "></div>
+    </>
   )
 }

@@ -15,8 +15,9 @@ export default function Button({
     <button
       {...props}
       className={cn(
-        'px-4 h-10 text-lg bg-sky-950 rounded-lg cursor-pointer hover:bg-sky-900 hover:shadow-lg flex items-center justify-center font-mono tracking-tighter font-semibold',
-        className
+        'px-4 h-10 text-lg bg-sky-950 rounded-lg cursor-pointer hover:bg-sky-900 hover:shadow-lg flex items-center justify-center font-mono tracking-tighter',
+        className,
+        props?.disabled ? 'pointer-events-none' : ''
       )}
     >
       {label}
