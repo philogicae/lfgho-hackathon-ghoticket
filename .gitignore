@@ -7,7 +7,10 @@
 .yarn/install-state.gz
 
 # testing
-/coverage
+coverage
+coverage.json
+typechain
+typechain-types
 
 # next.js
 /.next/
@@ -37,3 +40,7 @@ next-env.d.ts
 
 # vscode
 .vscode
+
+# Hardhat files
+cache
+artifacts
