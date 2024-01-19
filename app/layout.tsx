@@ -4,6 +4,7 @@ import { Roboto } from 'next/font/google'
 import ConnectKit from '@layout/ConnectKit'
 import NextUI from '@layout/NextUI'
 import Navbar from '@layout/Navbar'
+import Snackbar from '@layout/Snackbar'
 
 const font = Roboto({
   subsets: ['latin'],
@@ -77,7 +78,7 @@ export default function RootLayout({
       window.location.reload()
     }
   }
-  const csp = `default-src 'self' api.web3modal.com *.walletconnect.com *.walletconnect.org wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org/rpc cloudflare-eth.com sepolia.infura.io; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' * blob: data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'`
+  const csp = `default-src 'self' api.web3modal.com *.walletconnect.com *.walletconnect.org wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org/rpc *.infura.io; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' * blob: data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'`
   return (
     <html lang="en" className={font.variable}>
       <head>
@@ -86,7 +87,9 @@ export default function RootLayout({
       <body>
         <ConnectKit>
           <NextUI>
-            <Navbar>{children}</Navbar>
+            <Navbar>
+              <Snackbar>{children}</Snackbar>
+            </Navbar>
           </NextUI>
         </ConnectKit>
       </body>
