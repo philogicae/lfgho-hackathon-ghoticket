@@ -20,3 +20,7 @@ body {
 .halo-text {
   text-shadow: 0 0 5px #ffffff;
 }
+
+.sc-ecPEgm.fZsfzy {
+  @apply pointer-events-none;
+}

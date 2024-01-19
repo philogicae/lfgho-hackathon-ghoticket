@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { WagmiConfig, createConfig } from 'wagmi'
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
-import { sepolia } from 'wagmi/chains'
+import { sepolia, mainnet } from 'wagmi/chains'
 import Loading from '@components/frames/Loading'
 
 const url = !process.env.NEXT_PUBLIC_URL
@@ -21,7 +21,7 @@ const config = createConfig(
   getDefaultConfig({
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_ID,
     infuraId: process.env.NEXT_PUBLIC_INFURA_ID,
-    chains: [sepolia],
+    chains: [sepolia, mainnet],
     appName: 'GhoTicket',
     appDescription: 'Your App Description',
     appUrl: url,
@@ -41,7 +41,11 @@ export default function Web3Modal({ children }: { children: React.ReactNode }) {
         mode="dark"
         options={{
           embedGoogleFonts: true,
-          disclaimer: <>GhoTicket is an experimental project.</>,
+          disclaimer: (
+            <span className="text-cyan-400 !font-mono tracking-tight">
+              GhoTicket is an experimental project
+            </span>
+          ),
         }}
       >
         {children}
