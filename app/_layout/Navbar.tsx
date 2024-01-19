@@ -1,6 +1,7 @@
 'use client'
 import { Image } from '@nextui-org/react'
 import { ConnectKitButton } from 'connectkit'
+import { FaEthereum, FaXTwitter, FaGithub } from 'react-icons/fa6'
 
 export default function Navbar({ children }: { children: React.ReactNode }) {
   return (
@@ -25,7 +26,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
               loading="eager"
               disableSkeleton={true}
             />
-            <span className="text-4xl font-mono pl-1 pr-5 sm:pr-0 halo-text">
+            <span className="text-4xl font-mono pl-1.5 pr-5 sm:pr-0 halo-text">
               GhoTicket
             </span>
           </a>
@@ -36,11 +37,25 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col w-full h-full items-start justify-center pt-4 px-2">
           {children}
         </div>
-        <div className="flex flex-row w-full h-9 items-center justify-between p-2 text-sm font-mono text-cyan-400">
-          <a href="https://github.com/philogicae/lfgho-hackathon-ghoticket">
-            LFGHO Hackathon Project 2024
+        <div className="flex flex-row w-full h-9 items-center justify-between p-2 text-sm font-mono text-blue-600">
+          <a
+            href="https://ethglobal.com/showcase/ghoticket-0hkpx"
+            className="flex flex-row hover:underline items-center justify-center hover:text-cyan-300 active:text-cyan-300"
+          >
+            ETHGlobal-2024 <FaEthereum className="px-1 text-lg" /> LFGHO
+            Hackathon
           </a>
-          <a href="https://twitter.com/philogicae">@Philogicae</a>
+          <div className="flex flex-row text-lg pb-1">
+            <a
+              href="https://github.com/philogicae"
+              className="pr-1 hover:text-cyan-300 active:text-cyan-300"
+            >
+              <FaGithub />
+            </a>
+            <a href="https://twitter.com/philogicae">
+              <FaXTwitter className="hover:text-cyan-300 active:text-cyan-300" />
+            </a>
+          </div>
         </div>
       </div>
     </div>

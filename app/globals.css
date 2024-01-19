@@ -21,6 +21,11 @@ body {
   text-shadow: 0 0 10px #00ffff;
 }
 
+.halo-button {
+  border: 2px solid #00ffff;
+  box-shadow: 0 0 5px #00ffff;
+}
+
 .halo-polygon {
   filter: drop-shadow(0 0 5px #00ffff);
 }

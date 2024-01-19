@@ -3,6 +3,13 @@
 import Button from '@components/elements/Button'
 import { ClassName, cn } from '@utils/tw'
 import { useNavigate } from 'react-router-dom'
+import {
+  FaArrowUpLong,
+  FaArrowDownLong,
+  FaFileInvoiceDollar,
+  FaXmark,
+  FaHandHoldingDollar,
+} from 'react-icons/fa6'
 
 const Triangle = ({ className }: { className: ClassName }) => {
   return (
@@ -22,52 +29,81 @@ const Triangle = ({ className }: { className: ClassName }) => {
 const Corner = ({
   label,
   route,
+  arrow,
   className,
 }: {
   label: string
   route: string
+  arrow?: string
   className?: ClassName
 }) => {
   const navigate = useNavigate()
+  const arrowStyle = 'animate-pulse text-2xl text-cyan-400'
   return (
-    <Button
-      label={label}
-      className={cn('bg-blue-800 hover:bg-blue-700 w-24', className)}
-      onClick={() => navigate(route)}
-    />
+    <div className={cn('flex flex-col items-center justify-center', className)}>
+      {arrow === 'down' && (
+        <FaArrowDownLong className={cn(arrowStyle, 'pb-0.5')} />
+      )}
+      <Button
+        label={label}
+        className={cn(
+          'bg-blue-800 hover:bg-cyan-300 hover:text-black hover:font-bold active:bg-cyan-300 active:text-black active:font-bold w-24 halo-button'
+        )}
+        onClick={() => navigate(route)}
+      />
+      {arrow === 'up' && <FaArrowUpLong className={cn(arrowStyle, 'pt-0.5')} />}
+    </div>
   )
 }
 
 export default function Welcome() {
   return (
     <div className="flex flex-col w-full h-full justify-between items-center">
-      <br />
-      <div className="flex flex-col text-lg font-sans w-80 text-center halo-text">
-        <span>Generate claimable tickets to send GHO</span>
-        <span>No need to specify a wallet address</span>
-        <span>As simple as using cash</span>
+      <div className="flex flex-col text-lg font-sans w-96 h-2/5 items-center justify-center halo-text">
+        <div className="flex flex-row items-center justify-center">
+          <FaFileInvoiceDollar className="pr-3 pt-0.5 text-2xl" />
+          <span>Generate claimable tickets to send GHO</span>
+          <FaFileInvoiceDollar className="pl-3 pt-0.5 text-2xl" />
+        </div>
+        <div className="flex flex-row items-center justify-center">
+          <FaXmark className="pr-2 pt-0.5 text-2xl" />
+          <span> No need to specify a wallet address </span>
+          <FaXmark className="pl-2 pt-0.5 text-2xl" />
+        </div>
+        <div className="flex flex-row items-center justify-center">
+          <FaHandHoldingDollar className="pr-3 pt-0.5 text-3xl" />
+          <span>Simple as using cash</span>
+          <FaHandHoldingDollar className="pl-3 pt-0.5 text-3xl" />
+        </div>
+        <div className="flex flex-row items-center justify-center pt-5 animate-pulse text-green-500 font-mono text-lg font-thin">
+          <FaArrowDownLong className="pr-3 pt-0.5 text-2xl" />
+          <span>Start Now</span>
+          <FaArrowDownLong className="pl-3 pt-0.5 text-2xl" />
+        </div>
       </div>
-      <div className="relative -top-3">
+      <div className="relative h-3/5">
         <Triangle className="w-56 h-56 top-0 left-0 absolute halo-box" />
         <div className="w-56 h-56 relative">
           <Corner
             label="Send"
             route="send"
-            className="absolute top-3 left-16"
+            arrow="down"
+            className="absolute -top-4 left-16"
           />
           <Corner
             label="Track"
             route="track"
-            className="absolute -bottom-5 -left-10"
+            arrow="up"
+            className="absolute -bottom-10 -left-12"
           />
           <Corner
             label="Claim"
             route="claim"
-            className="absolute -bottom-5 -right-10"
+            arrow="up"
+            className="absolute -bottom-10 -right-12"
           />
         </div>
       </div>
-      <br />
     </div>
   )
 }
