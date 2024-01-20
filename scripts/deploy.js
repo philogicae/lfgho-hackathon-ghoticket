@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 require('dotenv').config()
 
-dest = '../app/_contracts'
+dest = 'app/_contracts'
 abis = path.join(dest, 'abis')
 if (!fs.existsSync(abis)) {
   fs.mkdirSync(abis, { recursive: true })
@@ -15,8 +15,7 @@ if (!fs.existsSync(registry)) {
 
 function saveABI(contractName) {
   abi = path.join(
-    __dirname,
-    `../artifacts/contracts/${contractName}.sol/${contractName}.json`
+    `artifacts/contracts/${contractName}.sol/${contractName}.json`
   )
   fs.copyFileSync(abi, path.join(abis, `${contractName}.json`))
 }
@@ -29,17 +28,15 @@ function saveAddress(contractName, chainId, address) {
 }
 
 async function Deployer(contractName, ...args) {
-  const factory = await ethers.getContractFactory(contractName, extras)
   console.log(`Deploying ${contractName}...`)
-  const contract = await factory.deploy(...args)
-  contract.deployed().then(() => {
-    console.log(`${contractName} deployed to: ${contract.address}`)
-  })
+  const contract = await ethers.deployContract(contractName, ...args)
+  await contract.waitForDeployment()
+  console.log(`${contractName} deployed to: ${contract.target}`)
   saveABI(contractName)
   saveAddress(
     contractName,
     (await ethers.provider.getNetwork()).chainId,
-    contract.address
+    contract.target
   )
 }
 

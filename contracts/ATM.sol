@@ -42,6 +42,25 @@ contract ATM is Context, EIP712 {
     bytes32 orderId;
     address claimer;
   }
+  struct OrderData {
+    bytes32 id;
+    Order order;
+    uint256 nbTickets;
+  }
+  struct StatusData {
+    bytes32[] ticketIds;
+    address[] claimers;
+  }
+  struct OrderFullData {
+    OrderData order;
+    StatusData status;
+  }
+  struct TicketData {
+    bytes32 id;
+    address claimer;
+    uint256 amount;
+    OrderData order;
+  }
 
   mapping(address => Account) private _accounts;
   mapping(address => PaginatedEnumerableSet.Bytes32Set) private _accountClaims;
@@ -91,10 +110,6 @@ contract ATM is Context, EIP712 {
 
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparatorV4();
-  }
-
-  function PERMIT_TYPEHASH() external pure returns (bytes32) {
-    return PERMIT_TICKET_TYPEHASH;
   }
 
   function createOrder(
@@ -153,12 +168,10 @@ contract ATM is Context, EIP712 {
     ) {
       revert InvalidWithdraw(orderId);
     }
-    PaginatedEnumerableSet.Bytes32Set storage ticketIds = _ticketOrders[
-      orderId
-    ];
+    bytes32[] memory ticketIds = _ticketOrders[orderId].values();
     uint256 nbUnclaimed;
-    for (uint256 i = 0; i < ticketIds.length(); i++) {
-      nbUnclaimed += _claims[ticketIds.at(i)].orderId > 0 ? 0 : 1;
+    for (uint256 i = 0; i < ticketIds.length; i++) {
+      nbUnclaimed += _claims[ticketIds[i]].orderId > 0 ? 0 : 1;
     }
     uint256 amount = order.amount / nbUnclaimed;
     if (amount > 0) {
@@ -199,17 +212,17 @@ contract ATM is Context, EIP712 {
     if (order.streamed == 0) {
       revert InvalidWithdraw(ticketId);
     }
-    uint256 share = order.amount / _ticketOrders[claim.orderId].length();
+    uint256 ticketAmount = order.amount / _ticketOrders[claim.orderId].length();
     uint256 alreadyWithdrawn = _accounts[claimer].withdrawnStreamBalances[
       ticketId
     ];
     uint256 amount;
     if (order.deadline < block.timestamp) {
-      amount = share - alreadyWithdrawn;
+      amount = ticketAmount - alreadyWithdrawn;
     } else {
       uint256 passed = block.timestamp - order.createdAt;
       uint256 duration = order.deadline - order.createdAt;
-      amount = (share * passed) / duration - alreadyWithdrawn;
+      amount = (ticketAmount * passed) / duration - alreadyWithdrawn;
     }
     if (amount > 0) {
       _accounts[claimer].withdrawnStreamBalances[ticketId] += amount;
@@ -272,7 +285,51 @@ contract ATM is Context, EIP712 {
     streamed = order.streamed;
   }
 
-  function isClaimed(bytes32 ticketId) external view returns (bool) {
+  function getAccountNonce(address addr) public view returns (uint256 nonce) {
+    nonce = _accounts[addr].nonce;
+  }
+
+  function getOrder(
+    bytes32 orderId
+  ) public view returns (OrderData memory data) {
+    data = OrderData(
+      orderId,
+      _orders[orderId],
+      _ticketOrders[orderId].length()
+    );
+  }
+
+  function getStatus(
+    bytes32 orderId
+  ) public view returns (StatusData memory data) {
+    data.ticketIds = _ticketOrders[orderId].values();
+    data.claimers = new address[](data.ticketIds.length);
+    for (uint256 i = 0; i < data.ticketIds.length; i++) {
+      address claimer = _claims[data.ticketIds[i]].claimer;
+      if (claimer != address(0)) {
+        data.claimers[i] = claimer;
+      }
+    }
+  }
+
+  function getOrderFull(
+    bytes32 orderId
+  ) public view returns (OrderFullData memory data) {
+    data.order = getOrder(orderId);
+    data.status = getStatus(orderId);
+  }
+
+  function getTicket(
+    bytes32 ticketId
+  ) public view returns (TicketData memory data) {
+    Claim memory claim = _claims[ticketId];
+    data.id = ticketId;
+    data.claimer = claim.claimer;
+    data.order = getOrder(claim.orderId);
+    data.amount = data.order.order.amount / data.order.nbTickets;
+  }
+
+  function isClaimed(bytes32 ticketId) public view returns (bool) {
     return _claims[ticketId].orderId > 0;
   }
 

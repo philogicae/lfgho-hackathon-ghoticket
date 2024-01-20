@@ -13,7 +13,7 @@
     "lint": "next lint",
     "node": "hardhat node",
     "solhint": "solhint contracts/**/*.sol",
-    "flatten": "hardhat flatten > artifacts/flatten/flatten.sol",
+    "flatten": "hardhat flatten > artifacts/flatten.sol",
     "compile": "hardhat compile",
     "deploy": "hardhat run scripts/deploy.js --network sepolia"
   },
