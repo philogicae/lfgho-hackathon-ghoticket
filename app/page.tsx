@@ -14,7 +14,6 @@ export default function Home() {
   useEffect(() => {
     if (window.location.pathname + window.location.hash === '/')
       router.replace('/#/')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const hashRouter = createHashRouter([
     { path: '', element: <Welcome /> },

@@ -5,6 +5,7 @@ import ConnectKit from '@layout/ConnectKit'
 import NextUI from '@layout/NextUI'
 import Navbar from '@layout/Navbar'
 import Snackbar from '@layout/Snackbar'
+import Background from '@layout/Background'
 
 const font = Roboto({
   subsets: ['latin'],
@@ -19,7 +20,8 @@ const url = !process.env.NEXT_PUBLIC_URL
 
 export const metadata: Metadata = {
   title: 'GhoTicket',
-  description: 'GhoTicket: LFGHO Hackathon Project 2024',
+  description:
+    'Generate claimable tickets to send GHO without specifying a wallet address. Simple as using cash. [LFGHO Hackathon 2024]',
   applicationName: 'GhoTicket',
   appLinks: {
     web: {
@@ -36,7 +38,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(url),
   openGraph: {
     title: 'GhoTicket',
-    description: 'GhoTicket: LFGHO Hackathon Project 2024',
+    description:
+      'Generate claimable tickets to send GHO without specifying a wallet address. Simple as using cash. [LFGHO Hackathon 2024]',
     url: url,
     siteName: 'GhoTicket',
     images: [
@@ -52,7 +55,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary',
     title: 'GhoTicket',
-    description: 'GhoTicket: LFGHO Hackathon Project 2024',
+    description:
+      'Generate claimable tickets to send GHO without specifying a wallet address. Simple as using cash. [LFGHO Hackathon 2024]',
     site: '@philogicae',
     creator: '@philogicae',
     images: [url + '/512x512.png'],
@@ -87,6 +91,7 @@ export default function RootLayout({
       <body>
         <ConnectKit>
           <NextUI>
+            <Background />
             <Navbar>
               <Snackbar>{children}</Snackbar>
             </Navbar>

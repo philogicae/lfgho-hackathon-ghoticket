@@ -51,22 +51,18 @@ const useTransact = ({
       onError && onError()
     },
   })
-  useEffect(
-    () => {
-      if (tx?.hash) {
-        wait()
-        addSnackbar({
-          type: 'info',
-          text: 'Transaction submitted',
-          link: getBlockscan[chainId] + tx!.hash,
-          duration: 0,
-          trigger: trigger,
-        })
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tx]
-  )
+  useEffect(() => {
+    if (tx?.hash) {
+      wait()
+      addSnackbar({
+        type: 'info',
+        text: 'Transaction submitted',
+        link: getBlockscan[chainId] + tx!.hash,
+        duration: 0,
+        trigger: trigger,
+      })
+    }
+  }, [tx])
   return {
     send: () =>
       writeAsync({ args: args }).catch(() => {

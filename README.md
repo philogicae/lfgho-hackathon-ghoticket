@@ -6,7 +6,7 @@ Centralized Backup Deployment: https://ghoticket.vercel.app
 
 ## Main Idea
 
-Generate claimable tickets to send GHO to anyone without specifying a wallet address. Simple as using cash.
+Generate claimable tickets to send GHO without specifying a wallet address. Simple as using cash.
 
 ## Description
 

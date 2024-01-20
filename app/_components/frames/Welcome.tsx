@@ -1,11 +1,13 @@
 'use client'
 
+import { ReactNode } from 'react'
 import Button from '@components/elements/Button'
 import { ClassName, cn } from '@utils/tw'
 import { useNavigate } from 'react-router-dom'
 import {
-  FaArrowUpLong,
+  FaMinus,
   FaArrowDownLong,
+  FaArrowRightArrowLeft,
   FaFileInvoiceDollar,
   FaXmark,
   FaHandHoldingDollar,
@@ -29,21 +31,20 @@ const Triangle = ({ className }: { className: ClassName }) => {
 const Corner = ({
   label,
   route,
-  arrow,
+  icon,
+  position,
   className,
 }: {
   label: string
   route: string
-  arrow?: string
+  icon?: ReactNode
+  position?: string
   className?: ClassName
 }) => {
   const navigate = useNavigate()
-  const arrowStyle = 'animate-pulse text-2xl text-cyan-400'
   return (
     <div className={cn('flex flex-col items-center justify-center', className)}>
-      {arrow === 'down' && (
-        <FaArrowDownLong className={cn(arrowStyle, 'pb-0.5')} />
-      )}
+      {position === 'top' && icon}
       <Button
         label={label}
         className={cn(
@@ -51,12 +52,13 @@ const Corner = ({
         )}
         onClick={() => navigate(route)}
       />
-      {arrow === 'up' && <FaArrowUpLong className={cn(arrowStyle, 'pt-0.5')} />}
+      {position === 'bottom' && icon}
     </div>
   )
 }
 
 export default function Welcome() {
+  const arrowStyle = 'animate-pulse text-2xl text-cyan-400'
   return (
     <div className="flex flex-col w-full h-full justify-between items-center">
       <div className="flex flex-col text-lg font-sans w-96 h-2/5 items-center justify-center halo-text">
@@ -75,10 +77,10 @@ export default function Welcome() {
           <span>Simple as using cash</span>
           <FaHandHoldingDollar className="pl-3 pt-0.5 text-3xl" />
         </div>
-        <div className="flex flex-row items-center justify-center pt-5 animate-pulse text-green-500 font-mono text-lg font-thin">
-          <FaArrowDownLong className="pr-3 pt-0.5 text-2xl" />
+        <div className="flex flex-row items-center justify-center pt-5 animate-pulse text-cyan-200 font-mono text-lg font-thin">
+          <FaMinus className="pr-3 pt-0.5 text-3xl" />
           <span>Start Now</span>
-          <FaArrowDownLong className="pl-3 pt-0.5 text-2xl" />
+          <FaMinus className="pl-3 pt-0.5 text-3xl" />
         </div>
       </div>
       <div className="relative h-3/5">
@@ -87,19 +89,34 @@ export default function Welcome() {
           <Corner
             label="Send"
             route="send"
-            arrow="down"
+            position="top"
+            icon={
+              <FaArrowDownLong
+                className={cn(arrowStyle, 'pb-0.5 text-cyan-200')}
+              />
+            }
             className="absolute -top-4 left-16"
           />
           <Corner
             label="Track"
             route="track"
-            arrow="up"
+            position="bottom"
+            icon={
+              <FaArrowRightArrowLeft
+                className={cn(arrowStyle, 'pt-0.5 rotate-90 text-cyan-200')}
+              />
+            }
             className="absolute -bottom-10 -left-12"
           />
           <Corner
             label="Claim"
             route="claim"
-            arrow="up"
+            position="bottom"
+            icon={
+              <FaArrowDownLong
+                className={cn(arrowStyle, 'pt-0.5 text-cyan-200')}
+              />
+            }
             className="absolute -bottom-10 -right-12"
           />
         </div>

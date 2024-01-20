@@ -1,5 +1,5 @@
 'use client'
-/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useEffect, useState } from 'react'
 import { SnackbarProps } from './types'
 import { IconType } from 'react-icons'

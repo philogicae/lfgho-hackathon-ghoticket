@@ -23,7 +23,8 @@ const config = createConfig(
     infuraId: process.env.NEXT_PUBLIC_INFURA_ID,
     chains: [sepolia, mainnet],
     appName: 'GhoTicket',
-    appDescription: 'Your App Description',
+    appDescription:
+      'Generate claimable tickets to send GHO without specifying a wallet address. Simple as using cash. [LFGHO Hackathon 2024]',
     appUrl: url,
     appIcon: url + '/512x512.png',
   })
