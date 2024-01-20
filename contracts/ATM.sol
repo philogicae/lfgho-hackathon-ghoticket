@@ -72,19 +72,19 @@ contract ATM is Context, EIP712 {
     address indexed claimer,
     uint256 amount
   );
-  event StreamWithdraw(
+  event StreamWithdrawn(
     bytes32 indexed ticketId,
     address indexed claimer,
     uint256 amount
   );
 
   error InvalidOrder();
+  error InvalidWithdraw();
   error ReservationNotChanged(bytes32 reservation);
   error ReservationNotFound(bytes32 reservation);
   error TicketNotFound(bytes32 orderId, bytes32 ticketId);
   error TicketAlreadyClaimed(bytes32 orderId, bytes32 ticketId);
   error TicketExpired(bytes32 orderId, bytes32 ticketId, uint256 deadline);
-  error SafetyDelayNotPassed(bytes32 orderId, bytes32 ticketId);
   error InvalidSigner(address creator, address signer);
 
   constructor() EIP712('ATM', 'alpha') {}
@@ -158,32 +158,45 @@ contract ATM is Context, EIP712 {
   function claimTicket(Ticket memory ticket) public {
     address claimer = _msgSender();
     (bytes32 ticketId, uint256 amount, uint8 streamed) = _permitTicket(ticket);
+    _claims[ticketId] = Claim(ticket.orderId, claimer);
+    _accountClaims[claimer].add(ticketId);
     if (streamed == 0) {
       GHO.transfer(claimer, amount);
     }
-    _claims[ticketId] = Claim(ticket.orderId, claimer);
     emit TicketClaimed(ticket.orderId, ticketId, claimer, amount);
   }
 
-  function withdrawFromStream() public {
-    // TODO
+  function withdrawStream(bytes32 ticketId) public {
+    address claimer = _msgSender();
+    Claim memory claim = _claims[ticketId];
+    if (claimer != claim.claimer) {
+      revert InvalidWithdraw();
+    }
+    Order memory order = _orders[claim.orderId];
+    if (order.streamed == 0) {
+      revert InvalidWithdraw();
+    }
   }
 
   function _permitTicket(
     Ticket memory ticket
-  ) private returns (bytes32 ticketId, uint256 amount, uint8 streamed) {
-    address claimer = _msgSender();
+  ) private view returns (bytes32 ticketId, uint256 amount, uint8 streamed) {
     bytes32 reservation = keccak256(
-      abi.encodePacked(claimer, ticket.orderSecret, ticket.ticketSecret)
+      abi.encodePacked(_msgSender(), ticket.orderSecret, ticket.ticketSecret)
     );
     uint256 reservationTime = _reservations[reservation];
-    if (reservationTime == 0) {
+    if (
+      reservationTime == 0 || block.timestamp < reservationTime + SAFETY_DELAY
+    ) {
       revert ReservationNotFound(reservation);
     }
     ticketId = keccak256(
       abi.encodePacked(ticket.orderSecret, ticket.ticketSecret)
     );
-    if (!_ticketOrders[ticket.orderId].contains(ticketId)) {
+    PaginatedEnumerableSet.Bytes32Set storage tickets = _ticketOrders[
+      ticket.orderId
+    ];
+    if (!tickets.contains(ticketId)) {
       revert TicketNotFound(ticket.orderId, ticketId);
     }
     if (_claims[ticketId].orderId > 0) {
@@ -193,19 +206,15 @@ contract ATM is Context, EIP712 {
     if (order.deadline < block.timestamp) {
       revert TicketExpired(ticket.orderId, ticketId, order.deadline);
     }
-    if (block.timestamp < reservationTime + SAFETY_DELAY) {
-      revert SafetyDelayNotPassed(ticket.orderId, ticketId);
-    }
-
-    /* address signer = ecrecover(
+    address signer = ecrecover(
       _hashTypedDataV4(
         keccak256(
           abi.encode(
             PERMIT_TICKET_TYPEHASH,
             block.chainid,
+            order.creator,
+            order.amount,
             ticket.orderId,
-            ticket.creator,
-            ticket.amount,
             ticket.orderSecret
           )
         )
@@ -214,26 +223,20 @@ contract ATM is Context, EIP712 {
       ticket.signature.r,
       ticket.signature.s
     );
-    if (signer != ticket.creator) {
-      revert InvalidSigner(ticket.creator, signer);
-    } */
-  }
-
-  function _approveTicket(
-    bytes32 orderId,
-    bytes32 ticketId,
-    address creator,
-    address claimer,
-    uint256 amount
-  ) private {
-    if (_claims[ticketId].orderId > 0) {
-      revert TicketAlreadyClaimed(orderId, ticketId);
+    if (signer != order.creator) {
+      revert InvalidSigner(order.creator, signer);
     }
-    _claims[ticketId] = Claim(orderId, claimer);
-    emit TicketClaimed(orderId, ticketId, claimer, amount);
+    amount = order.amount / tickets.length();
+    streamed = order.streamed;
   }
 
-  function isClaimedTicket(bytes32 ticketId) public view returns (bool) {
+  function isClaimed(bytes32 ticketId) external view returns (bool) {
     return _claims[ticketId].orderId > 0;
+  }
+
+  function isValid(
+    Ticket calldata ticket
+  ) external view returns (bytes32 ticketId, uint256 amount, uint8 streamed) {
+    return _permitTicket(ticket);
   }
 }
