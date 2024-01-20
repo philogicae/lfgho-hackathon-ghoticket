@@ -5,7 +5,7 @@ import Button from '@components/elements/Button'
 import { ClassName, cn } from '@utils/tw'
 import { useNavigate } from 'react-router-dom'
 import {
-  FaMinus,
+  FaArrowTurnDown,
   FaArrowDownLong,
   FaArrowRightArrowLeft,
   FaFileInvoiceDollar,
@@ -16,7 +16,7 @@ import {
 const Triangle = ({ className }: { className: ClassName }) => {
   return (
     <div className={cn(className)}>
-      <svg className="halo-polygon" viewBox="0 0 100 100">
+      <svg className="halo-polygon animate-pulse" viewBox="0 0 100 100">
         <polygon
           points="50 15, 100 100, 0 100"
           fill="transparent"
@@ -60,8 +60,8 @@ const Corner = ({
 export default function Welcome() {
   const arrowStyle = 'animate-pulse text-2xl text-cyan-400'
   return (
-    <div className="flex flex-col w-full h-full justify-between items-center">
-      <div className="flex flex-col text-lg font-sans w-96 h-2/5 items-center justify-center halo-text">
+    <div className="flex flex-col w-full h-full justify-between items-center overflow-hidden">
+      <div className="flex flex-col text-lg font-sans w-96 h-1/3 items-center justify-center halo-text">
         <div className="flex flex-row items-center justify-center">
           <FaFileInvoiceDollar className="pr-3 pt-0.5 text-2xl" />
           <span>Generate claimable tickets to send GHO</span>
@@ -73,17 +73,17 @@ export default function Welcome() {
           <FaXmark className="pl-2 pt-0.5 text-2xl" />
         </div>
         <div className="flex flex-row items-center justify-center">
-          <FaHandHoldingDollar className="pr-3 pt-0.5 text-3xl" />
+          <FaHandHoldingDollar className="pl-3 pt-0.5 text-3xl transform -scale-x-100" />
           <span>Simple as using cash</span>
           <FaHandHoldingDollar className="pl-3 pt-0.5 text-3xl" />
         </div>
-        <div className="flex flex-row items-center justify-center pt-5 animate-pulse text-cyan-200 font-mono text-lg font-thin">
-          <FaMinus className="pr-3 pt-0.5 text-3xl" />
-          <span>Start Now</span>
-          <FaMinus className="pl-3 pt-0.5 text-3xl" />
+        <div className="flex flex-row items-center justify-center pt-1 animate-pulse text-cyan-200 font-mono text-lg font-thin">
+          <FaArrowTurnDown className="pl-0 pt-3 text-3xl transform -scale-x-100" />
+          <span className="font-mono">START NOW</span>
+          <FaArrowTurnDown className="pl-0 pt-3 text-3xl" />
         </div>
       </div>
-      <div className="relative h-3/5">
+      <div className="relative h-2/3">
         <Triangle className="w-56 h-56 top-0 left-0 absolute halo-box" />
         <div className="w-56 h-56 relative">
           <Corner

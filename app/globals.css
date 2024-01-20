@@ -31,6 +31,7 @@ body {
 }
 
 .background {
+  @apply overflow-hidden pointer-events-none;
   background: #050011;
   position: fixed;
   top: 50%;
