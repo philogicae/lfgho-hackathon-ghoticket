@@ -79,7 +79,7 @@ contract ATM is Context, EIP712 {
   );
 
   error InvalidOrder();
-  error InvalidWithdraw();
+  error InvalidWithdraw(bytes32 id);
   error ReservationNotChanged(bytes32 reservation);
   error ReservationNotFound(bytes32 reservation);
   error TicketNotFound(bytes32 orderId, bytes32 ticketId);
@@ -143,8 +143,31 @@ contract ATM is Context, EIP712 {
     emit OrderCreated(orderId, creator, amount, tickets.length);
   }
 
-  function closeOrder() public returns (uint256) {
-    // TODO
+  function closeOrder(bytes32 orderId) public {
+    address creator = _msgSender();
+    Order memory order = _orders[orderId];
+    if (
+      order.creator != creator ||
+      order.deadline > block.timestamp ||
+      order.closed > 0
+    ) {
+      revert InvalidWithdraw(orderId);
+    }
+    PaginatedEnumerableSet.Bytes32Set storage ticketIds = _ticketOrders[
+      orderId
+    ];
+    uint256 nbUnclaimed;
+    for (uint256 i = 0; i < ticketIds.length(); i++) {
+      nbUnclaimed += _claims[ticketIds.at(i)].orderId > 0 ? 0 : 1;
+    }
+    uint256 amount = order.amount / nbUnclaimed;
+    if (amount > 0) {
+      _orders[orderId].closed = 1;
+      GHO.transfer(creator, amount);
+      emit OrderClosed(orderId, creator, amount);
+    } else {
+      revert InvalidWithdraw(orderId);
+    }
   }
 
   function reserveTicket(bytes32 reservation) public {
@@ -169,12 +192,31 @@ contract ATM is Context, EIP712 {
   function withdrawStream(bytes32 ticketId) public {
     address claimer = _msgSender();
     Claim memory claim = _claims[ticketId];
-    if (claimer != claim.claimer) {
-      revert InvalidWithdraw();
+    if (claim.claimer != claimer) {
+      revert InvalidWithdraw(ticketId);
     }
     Order memory order = _orders[claim.orderId];
     if (order.streamed == 0) {
-      revert InvalidWithdraw();
+      revert InvalidWithdraw(ticketId);
+    }
+    uint256 share = order.amount / _ticketOrders[claim.orderId].length();
+    uint256 alreadyWithdrawn = _accounts[claimer].withdrawnStreamBalances[
+      ticketId
+    ];
+    uint256 amount;
+    if (order.deadline < block.timestamp) {
+      amount = share - alreadyWithdrawn;
+    } else {
+      uint256 passed = block.timestamp - order.createdAt;
+      uint256 duration = order.deadline - order.createdAt;
+      amount = (share * passed) / duration - alreadyWithdrawn;
+    }
+    if (amount > 0) {
+      _accounts[claimer].withdrawnStreamBalances[ticketId] += amount;
+      GHO.transfer(claimer, amount);
+      emit StreamWithdrawn(ticketId, claimer, amount);
+    } else {
+      revert InvalidWithdraw(ticketId);
     }
   }
 
