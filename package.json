@@ -1,6 +1,6 @@
 {
   "name": "lfgho-hackathon-ghoticket",
-  "description": "Generate claimable tickets to send GHO without specifying a wallet address. Simple as using cash. [LFGHO Hackathon 2024]",
+  "description": "Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash. [LFGHO Hackathon 2024]",
   "version": "0.2.0",
   "repository": "https://github.com/philogicae/lfgho-hackathon-ghoticket",
   "private": false,

@@ -1,7 +1,7 @@
 {
   "short_name": "GhoTicket",
   "name": "GhoTicket",
-  "description": "Generate claimable tickets to send GHO without specifying a wallet address. Simple as using cash. [LFGHO Hackathon 2024]",
+  "description": "Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash. [LFGHO Hackathon 2024]",
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#ffffff",

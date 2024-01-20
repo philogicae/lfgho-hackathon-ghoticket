@@ -9,6 +9,7 @@ import { useAccount, useChainId, useContractRead } from 'wagmi'
 import { toChainName } from '@utils/chains'
 import { useSnackbar, useTrigger } from '@layout/Snackbar'
 import { useTransact } from '@components/hooks/Transact'
+import { hexToSignature } from 'viem'
 
 export default function Claim() {
   const { setOpen } = useModal()

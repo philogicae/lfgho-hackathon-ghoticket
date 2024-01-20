@@ -69,7 +69,7 @@ export default function Welcome() {
         </div>
         <div className="flex flex-row items-center justify-center">
           <FaXmark className="pr-2 pt-0.5 text-2xl" />
-          <span> No need to specify a wallet address </span>
+          <span> No need to specify any wallet address </span>
           <FaXmark className="pl-2 pt-0.5 text-2xl" />
         </div>
         <div className="flex flex-row items-center justify-center">
