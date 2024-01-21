@@ -1,4 +1,5 @@
 'use client'
+
 import { useRef } from 'react'
 import { useSnackbar } from '@layout/Snackbar'
 import { useSignTypedData } from 'wagmi'
@@ -36,5 +37,5 @@ export function useSigner() {
     })
     signTypedData({ ...args })
   }
-  return { signRequest, data, isSuccess, convert: hexToSignature }
+  return { signRequest, signature: data, isSuccess, convert: hexToSignature }
 }

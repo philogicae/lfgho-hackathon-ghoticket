@@ -1,3 +1,5 @@
+'use client'
+
 import { FaWallet } from 'react-icons/fa6'
 
 export default function PleaseConnect({ chain }: { chain?: string }) {

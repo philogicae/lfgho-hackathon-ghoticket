@@ -9,7 +9,7 @@ type TransactProps = {
   chainId: number
   contract?: ContractData
   method: string
-  args?: unknown
+  args?: any
   onSuccess?: () => void
   onError?: () => void
 }
@@ -27,6 +27,8 @@ const useTransact = ({
   const {
     writeAsync,
     isLoading,
+    isSuccess,
+    isError,
     data: tx,
   } = useContractWrite({
     ...contract,
@@ -69,7 +71,10 @@ const useTransact = ({
         addSnackbar({ type: 'error', text: 'Transaction error' })
         onError && onError()
       }),
+    tx,
     transactLoading: isLoading,
+    isSuccess,
+    isError,
   }
 }
 

@@ -1,3 +1,5 @@
+'use client'
+
 import Button from '@components/elements/Button'
 import { useNavigate } from 'react-router-dom'
 import { FaArrowLeft, FaRotateRight } from 'react-icons/fa6'
