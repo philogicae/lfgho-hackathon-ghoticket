@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSnackbar, useTrigger } from '@layout/Snackbar'
 import { useModal } from 'connectkit'
 import { useChainId, useAccount, useContractRead } from 'wagmi'
 import load from '@contracts/loader'
-import { useTransact } from '@components/hooks/Transact'
 import WrongChain from '@components/elements/WrongChain'
 import PleaseConnect from '@components/elements/PleaseConnect'
 import Title from '@components/elements/Title'
@@ -13,7 +11,6 @@ import { FaMagnifyingGlass } from 'react-icons/fa6'
 
 export default function Track() {
   const chainId = useChainId()
-  const addSnackbar = useSnackbar()
   const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
   const contract = load('GhoTicket', chainId)

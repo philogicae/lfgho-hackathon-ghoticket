@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSnackbar, useTrigger } from '@layout/Snackbar'
 import { useModal } from 'connectkit'
 import { useChainId, useAccount, useContractRead } from 'wagmi'
 import load from '@contracts/loader'
@@ -14,7 +13,6 @@ import { hexToSignature } from 'viem'
 
 export default function Claim() {
   const chainId = useChainId()
-  const addSnackbar = useSnackbar()
   const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
   const contract = load('GhoTicket', chainId)

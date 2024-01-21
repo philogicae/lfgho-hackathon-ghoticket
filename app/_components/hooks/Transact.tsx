@@ -26,10 +26,11 @@ const useTransact = ({
   const { trigger, wait, done } = useTrigger()
   const {
     writeAsync,
+    data: tx,
     isLoading,
     isSuccess,
     isError,
-    data: tx,
+    error,
   } = useContractWrite({
     ...contract,
     functionName: method,
@@ -75,6 +76,7 @@ const useTransact = ({
     transactLoading: isLoading,
     isSuccessTx: isSuccess,
     isErrorTx: isError,
+    error,
   }
 }
 

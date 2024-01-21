@@ -177,7 +177,7 @@ export default function Send() {
   const [isLoading, setIsLoading] = useState(false)
   const { signRequest, signature, isSuccessSign, isErrorSign, convert } =
     useSigner()
-  const { send, isSuccessTx, isErrorTx } = useTransact({
+  const { send, isSuccessTx, isErrorTx, error } = useTransact({
     chainId,
     contract,
     method: 'createOrder',
@@ -585,12 +585,18 @@ export default function Send() {
                 />
               </div>
             </div>
-            <div className="flex flex-col items-center justify-center h-full w-full text-xs">
-              {steps.results.map((ticket, key) => (
-                <span key={key}>
-                  {ticket.slice(0, 15) + '...' + ticket.slice(-15)}
-                </span>
-              ))}
+            <div className="flex flex-col items-center justify-center h-full w-full text-xs break-words">
+              {!error ? (
+                steps.results.map((ticket, key) => (
+                  <span key={key}>
+                    {ticket.slice(0, 15) + '...' + ticket.slice(-15)}
+                  </span>
+                ))
+              ) : (
+                <div className="p-2 h-64 w-80 items-center justify-center text-xs break-words text-red-400">
+                  ERROR: {error.message}
+                </div>
+              )}
             </div>
           </div>
         )}
