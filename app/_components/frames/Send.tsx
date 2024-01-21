@@ -24,13 +24,13 @@ import {
 import { Input, Switch } from '@nextui-org/react'
 import { keccak256, toHex } from 'viem'
 import { nanoid } from 'nanoid'
-import { read } from 'fs'
+import { cn } from '@utils/tw'
 
 const textClassNames = {
-  base: 'p-1 rounded',
+  base: 'p-0.5 rounded',
   label: '!text-white truncate text-sm font-mono',
   mainWrapper: 'h-9 w-full',
-  inputWrapper: '!rounded !bg-gray-900 py-0 px-2 h-9',
+  inputWrapper: '!rounded !bg-gray-900 py-0 px-1 h-9',
   input: '!text-white !bg-gray-900 text-right no-arrow px-1',
   errorMessage: 'text-right',
 }
@@ -158,7 +158,12 @@ export default function Send() {
         }
         onClick={() => setIsLoading(true)}
       />
-      <div className="flex flex-col w-full h-full border border-cyan-400 mt-2 items-center justify-start">
+      <div
+        className={cn(
+          'flex flex-col h-full border border-cyan-400 mt-2 items-center justify-start',
+          isLoading || steps.ready2 ? 'pointer-events-none' : ''
+        )}
+      >
         {!isConnected ? (
           <PleaseConnect />
         ) : !contract ? (
@@ -172,8 +177,8 @@ export default function Send() {
               3. Deposit $GHO
               <div />
             </span>
-            <div className="tracking-normal flex flex-wrap justify-between p-1 border-b-1 border-cyan-800">
-              <div className="p-2">
+            <div className="tracking-normal flex flex-wrap justify-between p-2 pb-0 border-b-1 border-cyan-800">
+              <div className="p-0">
                 <div className="text-sm px-2 py-0 items-start w-64 flex flex-row">
                   <span className="text-sm font-mono">$GHO Amount</span>
                   <span className="pl-0.5 text-red-500">*</span>
@@ -196,12 +201,12 @@ export default function Send() {
                       className="focus:outline-none text-xs text-gray-300"
                       onClick={() => setData({ ...data, amount: max })}
                     >
-                      max
+                      MAX
                     </button>
                   }
                 />
               </div>
-              <div className="p-2 w-24">
+              <div className="p-0 w-16">
                 <div className="text-sm px-2 py-0 justify-center w-full flex flex-row">
                   <span className="text-sm font-mono">Tickets</span>
                 </div>
@@ -225,12 +230,12 @@ export default function Send() {
                       className="focus:outline-none text-xs text-gray-300"
                       onClick={() => setData({ ...data, nbTickets: 10 })}
                     >
-                      max
+                      MAX
                     </button>
                   }
                 />
               </div>
-              <div className="p-2">
+              <div className="p-0">
                 <div className="text-sm px-2 py-0 items-start w-full flex flex-row">
                   <span className="text-sm font-mono">Deadline</span>
                   <span className="pl-0.5 text-red-500">*</span>
@@ -286,7 +291,7 @@ export default function Send() {
                     classNames={textClassNames}
                   />
                 </div>
-                <div className="text-sm w-full flex justify-start pl-2 items-center h-10">
+                <div className="text-sm w-full flex justify-start pl-2 items-center h-8">
                   Expiration :
                   <span className="pl-6 text-cyan-200 tracking-wider font-semibold">
                     {new Date(
@@ -295,7 +300,7 @@ export default function Send() {
                   </span>
                 </div>
               </div>
-              <div className="px-4 py-2 flex flex-col w-24 items-center justify-start">
+              <div className="p-0 flex flex-col w-16 items-center justify-start">
                 <span className="text-sm pb-1 font-mono">Stream</span>
                 <Switch
                   size="sm"
