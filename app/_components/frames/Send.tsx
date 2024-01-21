@@ -10,7 +10,8 @@ import {
   useContractReads,
 } from 'wagmi'
 import load from '@contracts/loader'
-import { useTransact } from '@components/hooks/Transact'
+import { useSigner } from '@components/hooks/Signer'
+import { useTransact, TransactProps } from '@components/hooks/Transact'
 import WrongChain from '@components/elements/WrongChain'
 import PleaseConnect from '@components/elements/PleaseConnect'
 import Title from '@components/elements/Title'
@@ -25,9 +26,10 @@ import { Input, Switch } from '@nextui-org/react'
 import {
   keccak256,
   toHex,
-  encodeAbiParameters,
-  parseAbiParameters,
+  /* encodeAbiParameters,
+  parseAbiParameters, */
   encodePacked,
+  TypedData,
 } from 'viem'
 import { nanoid } from 'nanoid'
 import { cn } from '@utils/tw'
@@ -59,31 +61,102 @@ type Data = {
   ticketSecret: `0x${string}`[]
 }
 
-type SignatureOrder = {
+type Sign1 = {
+  chainId: number
+  contactAddr: `0x${string}`
   typehash: `0x${string}`
-  chainId: bigint
   address: `0x${string}`
   amount: bigint
   orderId: `0x${string}`
   orderSecret: `0x${string}`
 }
 
-const generateSignatureData = ({
-  typehash,
+const generateSign1 = ({
   chainId,
+  contactAddr,
+  typehash,
   address,
   amount,
   orderId,
   orderSecret,
-}: SignatureOrder): `0x${string}` => {
-  return keccak256(
-    encodeAbiParameters(
-      parseAbiParameters(
-        'bytes32, uint256, address, uint256, bytes32, bytes32'
-      ),
-      [typehash, BigInt(chainId), address, amount, orderId, orderSecret]
-    )
-  )
+}: Sign1): any => {
+  return {
+    account: address,
+    domain: {
+      name: 'GhoTicket',
+      version: 'alpha',
+      chainId: chainId,
+      verifyingContract: contactAddr,
+    },
+    primaryType: 'SignOrder',
+    types: {
+      SignOrder: [
+        { name: 'typehash', type: 'bytes32' },
+        { name: 'address', type: 'address' },
+        { name: 'amount', type: 'uint256' },
+        { name: 'orderId', type: 'bytes32' },
+        { name: 'orderSecret', type: 'bytes32' },
+      ],
+    } as const satisfies TypedData,
+    message: {
+      typehash: typehash,
+      address: address,
+      amount: amount,
+      orderId: orderId,
+      orderSecret: orderSecret,
+    },
+  }
+}
+
+type Sign2 = {
+  chainId: number
+  contactAddr: `0x${string}`
+  typehash: `0x${string}`
+  owner: `0x${string}`
+  spender: `0x${string}`
+  value: bigint
+  nonce: bigint
+  deadline: bigint
+}
+
+const generateSign2 = ({
+  chainId,
+  contactAddr,
+  typehash,
+  owner,
+  spender,
+  value,
+  nonce,
+  deadline,
+}: Sign2): any => {
+  return {
+    account: owner,
+    domain: {
+      name: 'Gho Token',
+      version: '1',
+      chainId: chainId,
+      verifyingContract: contactAddr,
+    },
+    primaryType: 'SignOrder',
+    types: {
+      SignOrder: [
+        { name: 'typehash', type: 'bytes32' },
+        { name: 'owner', type: 'address' },
+        { name: 'spender', type: 'address' },
+        { name: 'value', type: 'uint256' },
+        { name: 'nonce', type: 'uint256' },
+        { name: 'deadline', type: 'uint256' },
+      ],
+    } as const satisfies TypedData,
+    message: {
+      typehash: typehash,
+      owner: owner,
+      spender: spender,
+      value: value,
+      nonce: nonce,
+      deadline: deadline,
+    },
+  }
 }
 
 export default function Send() {
@@ -91,13 +164,14 @@ export default function Send() {
   const addSnackbar = useSnackbar()
   const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
-  const contract = load('ATM', chainId)
-  const gho = load('GHO', chainId)
+  const { signRequest, data: signature } = useSigner()
+  const contract = load('GhoTicket', chainId)
+  const gho = load('Gho', chainId)
   const [steps, setSteps] = useState({
     ready1: false,
-    sign1: false,
+    sign1: '' as `0x${string}`,
     ready2: false,
-    sign2: false,
+    sign2: '' as `0x${string}`,
     ready3: false,
     tx3: false,
   })
@@ -112,7 +186,7 @@ export default function Send() {
     ticketSecret: secrets.slice(1) as `0x${string}`[],
   })
   const [hdm, setHdm] = useState({ hours: 1, days: 0, months: 0 })
-  const { data: account } = useContractReads({
+  const { data: initReads } = useContractReads({
     contracts: [
       {
         ...gho,
@@ -121,11 +195,12 @@ export default function Send() {
       },
       {
         ...gho,
-        functionName: 'decimals',
+        functionName: 'PERMIT_TYPEHASH',
       },
       {
-        ...contract,
-        functionName: 'DOMAIN_SEPARATOR',
+        ...gho,
+        functionName: 'nonces',
+        args: [address as `0x${string}`],
       },
       {
         ...contract,
@@ -138,12 +213,12 @@ export default function Send() {
       },
     ],
   })
-  const BALANCE = Number(account?.[0].result)
-  const DECIMALS = Number(account?.[1].result)
-  const MAX = BALANCE / Math.pow(10, DECIMALS)
-  const DOMAIN_SEPARATOR = account?.[2].result as `0x${string}`
-  const TYPEHASH = account?.[3].result as `0x${string}`
-  const NONCE = Number(account?.[4].result)
+  const BALANCE = initReads?.[0].result as bigint
+  const MAX = Number(BALANCE / BigInt(10 ** 18))
+  const TYPEHASH_GHO = initReads?.[1].result as `0x${string}`
+  const NONCE_GHO = Number(initReads?.[2].result)
+  const TYPEHASH_GHOTICKET = initReads?.[3].result as `0x${string}`
+  const NONCE_GHOTICKET = Number(initReads?.[4].result)
   const handleData = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.name === 'amount') {
       const num = Number(e.target.value)
@@ -188,8 +263,15 @@ export default function Send() {
     })
   }, [data])
   useEffect(() => {
+    if (signature)
+      setSteps({
+        ...steps,
+        sign1: signature,
+        ready2: true,
+      })
+  }, [signature])
+  useEffect(() => {
     if (!isConnected) setOpen(true)
-    else console.log()
   }, [])
   useEffect(() => {
     if (!contract) openSwitchNetworks()
@@ -198,7 +280,15 @@ export default function Send() {
     <>
       <Title
         label="Send Ticket[s]"
-        logo={!isConnected ? <FaRegPaperPlane /> : <FaCheck />}
+        logo={
+          !isConnected ? (
+            <FaRegPaperPlane />
+          ) : !steps.ready2 ? (
+            <FaCheck />
+          ) : (
+            <FaCheckDouble />
+          )
+        }
         loading={isLoading}
         ready={
           steps.ready1 && !isLoading
@@ -207,20 +297,38 @@ export default function Send() {
         }
         onClick={() => {
           setIsLoading(true)
-          const signatureData = generateSignatureData({
-            typehash: TYPEHASH,
-            chainId: BigInt(chainId),
-            address: address as `0x${string}`,
-            amount: BigInt(data.amount) * BigInt(10) ** BigInt(DECIMALS),
-            orderId: keccak256(
-              encodePacked(
-                ['address', 'uint256'],
-                [address as `0x${string}`, BigInt(NONCE)]
-              )
-            ),
-            orderSecret: secrets[0],
-          })
-          console.log(signatureData)
+          let sign
+          if (!steps.sign1) {
+            const sign1: Sign1 = {
+              chainId: chainId,
+              contactAddr: contract?.address as `0x${string}`,
+              typehash: TYPEHASH_GHOTICKET,
+              address: address as `0x${string}`,
+              amount: BigInt(data.amount) * BigInt(10) ** BigInt(18),
+              orderId: keccak256(
+                encodePacked(
+                  ['address', 'uint256'],
+                  [address as `0x${string}`, BigInt(NONCE_GHOTICKET)]
+                )
+              ),
+              orderSecret: secrets[0],
+            }
+            sign = generateSign1(sign1)
+          } else if (!steps.sign2) {
+            const sign2: Sign2 = {
+              chainId: chainId,
+              contactAddr: gho?.address as `0x${string}`,
+              typehash: TYPEHASH_GHO,
+              owner: address as `0x${string}`,
+              spender: contract!.address as `0x${string}`,
+              value: BigInt(data.amount) * BigInt(10) ** BigInt(18),
+              nonce: BigInt(NONCE_GHO),
+              deadline: BigInt(new Date().getTime() + 600),
+            }
+            sign = generateSign2(sign2)
+          }
+          signRequest({ ...sign })
+          setIsLoading(false)
         }}
       />
       <div
@@ -238,9 +346,35 @@ export default function Send() {
           <div>
             <span className="border-b-1 text-cyan-300 border-cyan-300 flex w-full justify-between">
               <div />
-              1. Sign Tickets <FaArrowRightLong className="h-6 w-6 p-1" />
-              2. Sign Approval <FaArrowRightLong className="p-1 h-6 w-6" />
-              3. Deposit $GHO
+              <span
+                className={cn(
+                  steps.ready1 && !steps.sign1
+                    ? 'animate-pulse text-orange-400'
+                    : ''
+                )}
+              >
+                1. Sign Tickets
+              </span>
+              <FaArrowRightLong className="h-6 w-6 p-1" />
+              <span
+                className={cn(
+                  steps.ready2 && !steps.sign2
+                    ? 'animate-pulse text-orange-400'
+                    : ''
+                )}
+              >
+                2. Sign Approval
+              </span>
+              <FaArrowRightLong className="p-1 h-6 w-6" />
+              <span
+                className={cn(
+                  steps.ready3 && !steps.tx3
+                    ? 'animate-pulse text-orange-400'
+                    : ''
+                )}
+              >
+                3. Deposit $GHO
+              </span>
               <div />
             </span>
             <div className="tracking-normal flex flex-wrap justify-between p-2 pb-0 border-b-1 border-cyan-800">

@@ -6,7 +6,7 @@ import {Context} from '@openzeppelin/contracts/utils/Context.sol';
 import {ERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol';
 import {EIP712} from '@openzeppelin/contracts/utils/cryptography/EIP712.sol';
 
-contract ATM is Context, EIP712 {
+contract GhoTicket is Context, EIP712 {
   using PaginatedEnumerableSet for PaginatedEnumerableSet.Bytes32Set;
 
   uint256 public constant SAFETY_DELAY = 1 minutes;
@@ -106,7 +106,7 @@ contract ATM is Context, EIP712 {
   error TicketExpired(bytes32 orderId, bytes32 ticketId, uint256 deadline);
   error InvalidSigner(address creator, address signer);
 
-  constructor() EIP712('ATM', 'alpha') {}
+  constructor() EIP712('GhoTicket', 'alpha') {}
 
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparatorV4();
@@ -266,7 +266,6 @@ contract ATM is Context, EIP712 {
         keccak256(
           abi.encode(
             PERMIT_TICKET_TYPEHASH,
-            block.chainid,
             order.creator,
             order.amount,
             ticket.orderId,

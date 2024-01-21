@@ -16,7 +16,7 @@ export default function Track() {
   const addSnackbar = useSnackbar()
   const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
-  const contract = load('ATM', chainId)
+  const contract = load('GhoTicket', chainId)
   const [isLoading, setIsLoading] = useState(false)
   useEffect(() => {
     if (!isConnected) setOpen(true)

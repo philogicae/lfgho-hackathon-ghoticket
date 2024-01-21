@@ -41,7 +41,7 @@ async function Deployer(contractName, ...args) {
 }
 
 async function main() {
-  await Deployer('ATM')
+  await Deployer('GhoTicket')
 }
 
 main().catch((error) => {
