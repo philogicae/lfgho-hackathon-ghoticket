@@ -22,7 +22,13 @@ import {
   FaCheckDouble,
 } from 'react-icons/fa6'
 import { Input, Switch } from '@nextui-org/react'
-import { keccak256, toHex } from 'viem'
+import {
+  keccak256,
+  toHex,
+  encodeAbiParameters,
+  parseAbiParameters,
+  encodePacked,
+} from 'viem'
 import { nanoid } from 'nanoid'
 import { cn } from '@utils/tw'
 
@@ -41,6 +47,9 @@ const switchClassNames = {
   label: 'text-white ml-1 truncate',
 }
 
+const generateSecrets = (): `0x${string}`[] =>
+  Array.from({ length: 11 }, () => keccak256(toHex(nanoid(32))))
+
 type Data = {
   amount: number
   deadline: number
@@ -50,8 +59,32 @@ type Data = {
   ticketSecret: `0x${string}`[]
 }
 
-const generateSecrets = (): `0x${string}`[] =>
-  Array.from({ length: 11 }, () => keccak256(toHex(nanoid(32))))
+type SignatureOrder = {
+  typehash: `0x${string}`
+  chainId: bigint
+  address: `0x${string}`
+  amount: bigint
+  orderId: `0x${string}`
+  orderSecret: `0x${string}`
+}
+
+const generateSignatureData = ({
+  typehash,
+  chainId,
+  address,
+  amount,
+  orderId,
+  orderSecret,
+}: SignatureOrder): `0x${string}` => {
+  return keccak256(
+    encodeAbiParameters(
+      parseAbiParameters(
+        'bytes32, uint256, address, uint256, bytes32, bytes32'
+      ),
+      [typehash, BigInt(chainId), address, amount, orderId, orderSecret]
+    )
+  )
+}
 
 export default function Send() {
   const chainId = useChainId()
@@ -90,15 +123,31 @@ export default function Send() {
         ...gho,
         functionName: 'decimals',
       },
+      {
+        ...contract,
+        functionName: 'DOMAIN_SEPARATOR',
+      },
+      {
+        ...contract,
+        functionName: 'PERMIT_TICKET_TYPEHASH',
+      },
+      {
+        ...contract,
+        functionName: 'getAccountNonce',
+        args: [address as `0x${string}`],
+      },
     ],
   })
-  const balance = Number(account?.[0].result)
-  const decimals = account?.[1].result as number
-  const max = balance / Math.pow(10, decimals)
+  const BALANCE = Number(account?.[0].result)
+  const DECIMALS = Number(account?.[1].result)
+  const MAX = BALANCE / Math.pow(10, DECIMALS)
+  const DOMAIN_SEPARATOR = account?.[2].result as `0x${string}`
+  const TYPEHASH = account?.[3].result as `0x${string}`
+  const NONCE = Number(account?.[4].result)
   const handleData = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.name === 'amount') {
       const num = Number(e.target.value)
-      e.target.value = (num > max ? max : num < 0 ? 0 : num).toString()
+      e.target.value = (num > MAX ? MAX : num < 0 ? 0 : num).toString()
     } else if (e.target.name === 'nbTickets') {
       const num = Number(e.target.value)
       e.target.value = (num > 10 ? 10 : num < 1 ? 1 : num).toString()
@@ -132,7 +181,7 @@ export default function Send() {
       ...steps,
       ready1:
         data.amount > 0 &&
-        data.amount <= max &&
+        data.amount <= MAX &&
         data.nbTickets > 0 &&
         data.nbTickets <= 10 &&
         data.deadline >= 3599400,
@@ -156,12 +205,29 @@ export default function Send() {
             ? 'halo-button text-lime-300 cursor-pointer'
             : ''
         }
-        onClick={() => setIsLoading(true)}
+        onClick={() => {
+          setIsLoading(true)
+          const signatureData = generateSignatureData({
+            typehash: TYPEHASH,
+            chainId: BigInt(chainId),
+            address: address as `0x${string}`,
+            amount: BigInt(data.amount) * BigInt(10) ** BigInt(DECIMALS),
+            orderId: keccak256(
+              encodePacked(
+                ['address', 'uint256'],
+                [address as `0x${string}`, BigInt(NONCE)]
+              )
+            ),
+            orderSecret: secrets[0],
+          })
+          console.log(signatureData)
+        }}
       />
       <div
         className={cn(
           'flex flex-col h-full border border-cyan-400 mt-2 items-center justify-start',
-          isLoading || steps.ready2 ? 'pointer-events-none' : ''
+          isLoading || steps.ready2 ? 'pointer-events-none' : '',
+          !isConnected || !contract ? 'w-full' : ''
         )}
       >
         {!isConnected ? (
@@ -189,17 +255,17 @@ export default function Send() {
                   size="sm"
                   type="number"
                   min={0}
-                  max={max}
+                  max={MAX}
                   value={data.amount.toString()}
                   onChange={handleData}
                   errorMessage={
-                    0 > data.amount || data.amount > max ? 'Invalid amount' : ''
+                    0 > data.amount || data.amount > MAX ? 'Invalid amount' : ''
                   }
                   classNames={textClassNames}
                   startContent={
                     <button
                       className="focus:outline-none text-xs text-gray-300"
-                      onClick={() => setData({ ...data, amount: max })}
+                      onClick={() => setData({ ...data, amount: MAX })}
                     >
                       MAX
                     </button>
