@@ -16,7 +16,7 @@ import {
 const Triangle = ({ className }: { className: ClassName }) => {
   return (
     <div className={cn(className)}>
-      <svg className="halo-polygon animate-pulse" viewBox="0 0 100 100">
+      <svg className="halo-polygon" viewBox="0 0 100 100">
         <polygon
           points="50 15, 100 100, 0 100"
           fill="transparent"
