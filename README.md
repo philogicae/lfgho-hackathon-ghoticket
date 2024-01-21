@@ -6,7 +6,7 @@ Centralized Backup Deployment: https://ghoticket.vercel.app
 
 ## Main Idea
 
-Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash.
+Generate claimable tickets to send $GHO without specifying any wallet address. Simple as using cash.
 
 ## Description
 
@@ -17,3 +17,11 @@ The sender needs no information about the recipient(s) to prepare tickets, and c
 Subsequently, by accessing a ticket link, a recipient can securely claim the funds in 2 txs: 1) Reservation of the ticket (frontrunning prevention) 2) After validation and a safety delay (1min), the ticket and associated funds can be claimed.
 
 Given a wallet address, you can track the status of its created tickets and also see its claim history, on an unified page. Unclaimed funds can be withdrawn after the chosen deadline (when the tickets expired).
+
+## Missing Features at Submission
+
+Everything is done except the frontend (70%). Now I plan to finish the project 100% and to add:
+
+- Support for any ERC20 token
+- Add credit delegation tickets for $GHO
+- Maybe CCIP for crosschain transfers using a trick
