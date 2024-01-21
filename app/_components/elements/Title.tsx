@@ -35,7 +35,7 @@ export default function Title({
       <Button
         label={label}
         disabled={true}
-        className={'mx-3 bg-indigo-700 w-44 text-md font-semibold'}
+        className={'mx-3 bg-indigo-700 w-44 text-md font-extrabold'}
       />
       <Button
         className={cn('w-20 h-8 text-xl text-cyan-300', ready)}

@@ -11,7 +11,7 @@ export function useSigner() {
   const setTrigger = (value: boolean) => {
     trigger.current = value
   }
-  const { signTypedData, data, isSuccess } = useSignTypedData({
+  const { signTypedData, data, isSuccess, isError } = useSignTypedData({
     onSuccess: () => {
       setTrigger(false)
       addSnackbar({
@@ -22,7 +22,7 @@ export function useSigner() {
     onError: () => {
       setTrigger(false)
       addSnackbar({
-        type: 'error',
+        type: 'warning',
         text: 'Failed to sign',
       })
     },
@@ -37,5 +37,11 @@ export function useSigner() {
     })
     signTypedData({ ...args })
   }
-  return { signRequest, signature: data, isSuccess, convert: hexToSignature }
+  return {
+    signRequest,
+    signature: data,
+    isSuccessSign: isSuccess,
+    isErrorSign: isError,
+    convert: hexToSignature,
+  }
 }

@@ -73,8 +73,8 @@ const useTransact = ({
       }),
     tx,
     transactLoading: isLoading,
-    isSuccess,
-    isError,
+    isSuccessTx: isSuccess,
+    isErrorTx: isError,
   }
 }
 

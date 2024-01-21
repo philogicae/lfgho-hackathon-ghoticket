@@ -60,7 +60,7 @@ export default function Snackbar({ children }: { children: React.ReactNode }) {
       <SnackbarContext.Provider value={{ queue, dispatch }}>
         <div
           id="snackbar"
-          className="absolute flex flex-col items-end justify-end w-full h-full pb-1 overflow-hidden pointer-events-none"
+          className="absolute flex flex-col items-end justify-end w-full h-full pb-2 overflow-hidden pointer-events-none"
         >
           {queue.map((snack) => (
             <Notification
@@ -76,8 +76,10 @@ export default function Snackbar({ children }: { children: React.ReactNode }) {
                 const singleSnack = document.getElementById(
                   'notif-' + snack.key
                 )
-                singleSnack!.style.transition = 'transform 0.4s ease'
-                singleSnack!.style.transform = 'translateX(110%)'
+                if (singleSnack) {
+                  singleSnack!.style.transition = 'transform 0.4s ease'
+                  singleSnack!.style.transform = 'translateX(110%)'
+                }
                 setTimeout(() => {
                   dispatch({
                     type: 'REMOVE_SNACKBAR',

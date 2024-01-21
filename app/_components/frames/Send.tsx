@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSnackbar, useTrigger } from '@layout/Snackbar'
+import { cn } from '@utils/tw'
 import { useModal } from 'connectkit'
 import {
   useChainId,
@@ -22,6 +22,7 @@ import {
   FaCheck,
   FaCheckDouble,
   FaRegCircleCheck,
+  FaRegCircleXmark,
 } from 'react-icons/fa6'
 import { Input, Switch } from '@nextui-org/react'
 import {
@@ -31,10 +32,8 @@ import {
   parseAbiParameters, */
   encodePacked,
   TypedData,
-  Signature,
 } from 'viem'
 import { nanoid } from 'nanoid'
-import { cn } from '@utils/tw'
 
 const textClassNames = {
   base: 'p-0.5 rounded',
@@ -47,7 +46,7 @@ const textClassNames = {
 
 const switchClassNames = {
   wrapper:
-    'bg-gray-950 group-data-[selected=true]:bg-cyan-800 ring-1 ring-cyan-400 ring-offset-2 ring-offset-gray-950',
+    'bg-gray-950 group-data-[selected=true]:bg-amber-700 ring-1 ring-amber-300 ring-offset-2 ring-offset-gray-950',
   label: 'text-white ml-1 truncate',
 }
 
@@ -160,33 +159,30 @@ const generateSign2 = ({
 }
 
 export default function Send() {
-  const chainId = useChainId()
-  const addSnackbar = useSnackbar()
+  const [secrets, setSecrets] = useState(generateSecrets())
   const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
-  const { signRequest, signature, convert } = useSigner()
-  const contract = load('GhoTicket', chainId)
+  const chainId = useChainId()
   const gho = load('Gho', chainId)
+  const contract = load('GhoTicket', chainId)
   const [steps, setSteps] = useState({
     ready1: false,
-    sign1: '' as any,
+    sign1: [] as any,
     ready2: false,
-    sign2: '' as any,
+    sign2: [] as any,
     ready3: false,
-    tx3: '' as any,
-    tickets: [] as `0x${string}`[],
+    tx3: [] as any,
+    results: [] as `0x${string}`[],
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [secrets, setSecrets] = useState(generateSecrets())
-  const [data, setData] = useState<Data>({
-    amount: 0,
-    deadline: 3600000,
-    stream: false,
-    nbTickets: 1,
-    orderSecret: secrets.at(0) as `0x${string}`,
-    ticketSecret: secrets.slice(1) as `0x${string}`[],
+  const { signRequest, signature, isSuccessSign, isErrorSign, convert } =
+    useSigner()
+  const { send, isSuccessTx, isErrorTx } = useTransact({
+    chainId,
+    contract,
+    method: 'createOrder',
+    args: steps.tx3,
   })
-  const [hdm, setHdm] = useState({ hours: 1, days: 0, months: 0 })
   const { data: initReads } = useContractReads({
     contracts: [
       {
@@ -220,11 +216,14 @@ export default function Send() {
   const NONCE_GHO = Number(initReads?.[2].result)
   const TYPEHASH_GHOTICKET = initReads?.[3].result as `0x${string}`
   const NONCE_GHOTICKET = Number(initReads?.[4].result)
-  const { send, isSuccess, isError } = useTransact({
-    chainId,
-    contract,
-    method: 'createOrder',
-    args: steps.tx3,
+  const [hdm, setHdm] = useState({ hours: 1, days: 0, months: 0 })
+  const [data, setData] = useState<Data>({
+    amount: 0,
+    deadline: 3600000,
+    stream: false,
+    nbTickets: 1,
+    orderSecret: secrets.at(0) as `0x${string}`,
+    ticketSecret: secrets.slice(1) as `0x${string}`[],
   })
   const handleData = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.name === 'amount') {
@@ -259,7 +258,52 @@ export default function Send() {
           hdm.hours * 3600000 + hdm.days * 86400000 + hdm.months * 2592000000,
       })
   }, [hdm])
+  const autoSign = () => {
+    console.log('modal')
+    setIsLoading(true)
+    if (steps.ready1 && !steps.ready2) {
+      const sign1: Sign1 = {
+        chainId: chainId,
+        contactAddr: contract?.address as `0x${string}`,
+        typehash: TYPEHASH_GHOTICKET,
+        address: address as `0x${string}`,
+        amount: BigInt(data.amount) * BigInt(10 ** 18),
+        orderId: keccak256(
+          encodePacked(
+            ['address', 'uint256'],
+            [address as `0x${string}`, BigInt(NONCE_GHOTICKET)]
+          )
+        ),
+        orderSecret: secrets[0],
+      }
+      signRequest({ ...generateSign1(sign1) })
+    } else if (steps.ready2 && !steps.ready3) {
+      const sign2: Sign2 = {
+        chainId: chainId,
+        contactAddr: gho?.address as `0x${string}`,
+        typehash: TYPEHASH_GHO,
+        owner: address as `0x${string}`,
+        spender: contract!.address as `0x${string}`,
+        value: BigInt(data.amount) * BigInt(10 ** 18),
+        nonce: BigInt(NONCE_GHO),
+        deadline: BigInt(new Date().getTime() + 600),
+      }
+      signRequest({ ...generateSign2(sign2) })
+    } else if (steps.ready3 && steps.results.length === 0) {
+      console.log('TX3')
+      const tx3 = [
+        BigInt(data.amount) * BigInt(10 ** 18),
+        BigInt(new Date().getTime() + data.deadline),
+        data.stream ? 1 : 0,
+        secrets.slice(1, data.nbTickets + 1) as `0x${string}`[],
+        steps.sign2,
+      ]
+      setSteps({ ...steps, tx3: tx3 })
+    }
+    console.log('modal out')
+  }
   useEffect(() => {
+    console.log('data')
     if (isConnected)
       setSteps({
         ...steps,
@@ -270,34 +314,63 @@ export default function Send() {
           data.nbTickets <= 10 &&
           data.deadline >= 3599400,
       })
+    console.log('data out')
   }, [data])
   useEffect(() => {
-    if (isConnected && signature) {
-      if (!steps.sign1)
-        setSteps({
-          ...steps,
-          sign1: convert(signature),
-          ready2: true,
-        })
-      else if (!steps.sign2)
-        setSteps({
-          ...steps,
-          sign2: convert(signature),
-          ready3: true,
-        })
-    }
-  }, [signature, isSuccess])
-  useEffect(() => {
-    if (!isSuccess && steps.tx3 && steps.tickets.length == 0) {
-      send()
-      setSteps({
-        ...steps,
-        tickets: secrets.slice(1, data.nbTickets + 1) as `0x${string}`[],
-      })
-    } else if (isSuccess || isError) {
+    console.log('signature')
+    if (isConnected && (isSuccessSign || isErrorSign)) {
       setIsLoading(false)
+      if (signature) {
+        if (!steps.ready2)
+          setSteps({
+            ...steps,
+            sign1: convert(signature as `0x${string}`),
+            ready2: true,
+          })
+        else if (!steps.ready3)
+          setSteps({
+            ...steps,
+            sign2: convert(signature as `0x${string}`),
+            ready3: true,
+          })
+      }
     }
-  }, [steps])
+    console.log('signature out')
+  }, [signature, isSuccessSign, isErrorSign])
+  useEffect(() => {
+    console.log('steps', steps)
+    if (steps.results.length == 0) {
+      if (steps.ready2 && !steps.ready3 && !isErrorSign) {
+        setTimeout(() => {
+          autoSign()
+        }, 1500)
+      } else if (steps.ready3 && steps.tx3.length === 0 && !isErrorTx) {
+        setTimeout(() => {
+          autoSign()
+        }, 1500)
+      } else if (
+        steps.ready3 &&
+        steps.tx3.length > 0 &&
+        !isSuccessTx &&
+        !isErrorTx
+      ) {
+        console.log('send')
+        send()
+      } else if (isSuccessTx || isErrorTx) {
+        setIsLoading(false)
+        if (isSuccessTx) {
+          setSteps({
+            ...steps,
+            results: secrets.slice(1, data.nbTickets + 1) as `0x${string}`[],
+          })
+        }
+      }
+    }
+    console.log('steps out')
+  }, [steps, isSuccessTx, isErrorTx])
+  useEffect(() => {
+    console.log('isLoading', isLoading)
+  }, [isLoading])
   useEffect(() => {
     if (!isConnected) setOpen(true)
   }, [])
@@ -315,10 +388,12 @@ export default function Send() {
             <FaCheck />
           ) : !steps.ready3 ? (
             <FaCheckDouble />
-          ) : !isSuccess ? (
+          ) : !isSuccessTx && !isErrorTx ? (
             <FaRegPaperPlane className="rotate-12" />
+          ) : isSuccessTx ? (
+            <FaRegCircleCheck className="text-green-500" />
           ) : (
-            <FaRegCircleCheck />
+            <FaRegCircleXmark className="text-red-500" />
           )
         }
         loading={isLoading}
@@ -327,55 +402,13 @@ export default function Send() {
             ? 'halo-button text-lime-300 cursor-pointer'
             : ''
         }
-        onClick={() => {
-          setIsLoading(true)
-          if (steps.ready1 && !steps.sign1) {
-            const sign1: Sign1 = {
-              chainId: chainId,
-              contactAddr: contract?.address as `0x${string}`,
-              typehash: TYPEHASH_GHOTICKET,
-              address: address as `0x${string}`,
-              amount: BigInt(data.amount) * BigInt(10 ** 18),
-              orderId: keccak256(
-                encodePacked(
-                  ['address', 'uint256'],
-                  [address as `0x${string}`, BigInt(NONCE_GHOTICKET)]
-                )
-              ),
-              orderSecret: secrets[0],
-            }
-            signRequest({ ...generateSign1(sign1) })
-            setIsLoading(false)
-          } else if (steps.ready2 && !steps.sign2) {
-            const sign2: Sign2 = {
-              chainId: chainId,
-              contactAddr: gho?.address as `0x${string}`,
-              typehash: TYPEHASH_GHO,
-              owner: address as `0x${string}`,
-              spender: contract!.address as `0x${string}`,
-              value: BigInt(data.amount) * BigInt(10 ** 18),
-              nonce: BigInt(NONCE_GHO),
-              deadline: BigInt(new Date().getTime() + 600),
-            }
-            signRequest({ ...generateSign2(sign2) })
-            setIsLoading(false)
-          } else if (steps.ready3 && !steps.tx3) {
-            const tx3 = [
-              BigInt(data.amount) * BigInt(10 ** 18),
-              BigInt(new Date().getTime() + data.deadline),
-              data.stream ? 1 : 0,
-              secrets.slice(1, data.nbTickets + 1) as `0x${string}`[],
-              steps.sign2,
-            ]
-            setSteps({ ...steps, tx3: tx3 as any })
-          }
-        }}
+        onClick={autoSign}
       />
       <div
         className={cn(
           'flex flex-col h-full border border-cyan-400 mt-2 items-center justify-start',
           !isConnected || !contract ? 'w-full' : '',
-          isLoading || steps.sign1 ? 'pointer-events-none' : ''
+          isLoading || steps.ready2 ? 'pointer-events-none' : ''
         )}
       >
         {!isConnected ? (
@@ -383,13 +416,13 @@ export default function Send() {
         ) : !contract ? (
           <WrongChain />
         ) : (
-          <div>
+          <div className="flex flex-col w-full h-full">
             <span className="border-b-1 text-cyan-300 border-cyan-300 flex w-full justify-between">
               <div />
               <span
                 className={cn(
-                  steps.ready1 && !steps.sign1
-                    ? 'animate-pulse text-orange-400'
+                  steps.ready1 && !steps.ready2
+                    ? 'animate-pulse text-orange-400 font-bold'
                     : ''
                 )}
               >
@@ -398,8 +431,8 @@ export default function Send() {
               <FaArrowRightLong className="h-6 w-6 p-1" />
               <span
                 className={cn(
-                  steps.ready2 && !steps.sign2
-                    ? 'animate-pulse text-orange-400'
+                  steps.ready2 && !steps.ready3
+                    ? 'animate-pulse text-orange-400 font-bold'
                     : ''
                 )}
               >
@@ -408,8 +441,8 @@ export default function Send() {
               <FaArrowRightLong className="p-1 h-6 w-6" />
               <span
                 className={cn(
-                  steps.ready3 && !steps.tx3
-                    ? 'animate-pulse text-orange-400'
+                  steps.ready3 && steps.results.length === 0
+                    ? 'animate-pulse text-orange-400 font-bold'
                     : ''
                 )}
               >
@@ -438,7 +471,7 @@ export default function Send() {
                   classNames={textClassNames}
                   startContent={
                     <button
-                      className="focus:outline-none text-xs text-gray-300"
+                      className="focus:outline-none text-xs text-amber-300"
                       onClick={() => setData({ ...data, amount: MAX })}
                     >
                       MAX
@@ -467,7 +500,7 @@ export default function Send() {
                   classNames={textClassNames}
                   startContent={
                     <button
-                      className="focus:outline-none text-xs text-gray-300"
+                      className="focus:outline-none text-xs text-amber-300"
                       onClick={() => setData({ ...data, nbTickets: 10 })}
                     >
                       MAX
@@ -484,10 +517,10 @@ export default function Send() {
                     hdm.months * 2592000000 >
                     3600000 && (
                     <div
-                      className="pl-2 pt-0.5 text-cyan-500 cursor-pointer text-xs"
+                      className="pl-2 pt-0.5 text-amber-300 cursor-pointer text-xs"
                       onClick={() => setHdm({ hours: 1, days: 0, months: 0 })}
                     >
-                      reset
+                      RESET
                     </div>
                   )}
                 </div>
@@ -533,7 +566,7 @@ export default function Send() {
                 </div>
                 <div className="text-sm w-full flex justify-start pl-2 items-center h-8">
                   Expiration :
-                  <span className="pl-6 text-cyan-200 tracking-wider font-semibold">
+                  <span className="pl-6 text-amber-300 tracking-wider font-semibold">
                     {new Date(
                       new Date().getTime() + data.deadline
                     ).toLocaleString()}
@@ -552,8 +585,12 @@ export default function Send() {
                 />
               </div>
             </div>
-            <div className="flex flex-col items-center justify-between text-xs">
-              {steps.tickets.length > 0 && steps.tickets}
+            <div className="flex flex-col items-center justify-center h-full w-full text-xs">
+              {steps.results.map((ticket, key) => (
+                <span key={key}>
+                  {ticket.slice(0, 15) + '...' + ticket.slice(-15)}
+                </span>
+              ))}
             </div>
           </div>
         )}
