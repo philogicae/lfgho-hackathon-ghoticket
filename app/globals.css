@@ -45,6 +45,15 @@ body {
   filter: drop-shadow(0 0 5px #00ffff);
 }
 
+.no-arrow::-webkit-outer-spin-button,
+.no-arrow::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-arrow {
+  -moz-appearance: textfield;
+}
+
 .background {
   @apply overflow-hidden pointer-events-none;
   background: #050011;

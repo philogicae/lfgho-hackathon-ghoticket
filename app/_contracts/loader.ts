@@ -1,6 +1,7 @@
 import { Abi } from 'viem'
 import registry from './registry.json'
 import ATM from './abis/ATM.json'
+import GHO from './abis/GHO.json'
 
 const reg: {
   [contract: string]: {
@@ -12,6 +13,7 @@ const abis: {
   [contract: string]: Abi
 } = {
   ATM: ATM.abi as Abi,
+  GHO: GHO.abi as Abi,
 }
 
 export type ContractData = {

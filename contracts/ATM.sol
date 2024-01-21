@@ -338,8 +338,4 @@ contract ATM is Context, EIP712 {
   ) external view returns (bytes32 ticketId, uint256 amount, uint8 streamed) {
     return _permitTicket(ticket);
   }
-
-  function getBalanceAndDecimals() external view returns (uint256, uint8) {
-    return (GHO.balanceOf(_msgSender()), GHO.decimals());
-  }
 }

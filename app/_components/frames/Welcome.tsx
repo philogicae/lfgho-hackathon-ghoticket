@@ -48,7 +48,7 @@ const Corner = ({
       <Button
         label={label}
         className={cn(
-          'bg-blue-800 hover:bg-cyan-300 hover:text-black hover:font-bold active:bg-cyan-300 active:text-black active:font-bold w-24 halo-button'
+          'bg-sky-950 hover:bg-cyan-300 hover:text-black hover:font-bold active:bg-cyan-300 active:text-black active:font-bold w-24 halo-button'
         )}
         onClick={() => navigate(route)}
       />
@@ -64,7 +64,7 @@ export default function Welcome() {
       <div className="flex flex-col text-lg font-sans w-96 h-1/3 items-center justify-center halo-text">
         <div className="flex flex-row items-center justify-center">
           <FaFileInvoiceDollar className="pr-3 pt-0.5 text-2xl" />
-          <span>Generate claimable tickets to send GHO</span>
+          <span>Generate claimable tickets to send $GHO</span>
           <FaFileInvoiceDollar className="pl-3 pt-0.5 text-2xl" />
         </div>
         <div className="flex flex-row items-center justify-center">
