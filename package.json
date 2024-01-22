@@ -11,6 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "vercel": "vercel deploy --prod",
     "node": "hardhat node",
     "solhint": "solhint contracts/**/*.sol",
     "flatten": "hardhat flatten > artifacts/flatten.sol",
@@ -19,8 +20,8 @@
   },
   "dependencies": {
     "@nextui-org/react": "^2.2.9",
-    "@typescript-eslint/eslint-plugin": "^6.19.0",
-    "@typescript-eslint/parser": "^6.19.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
     "connectkit": "^1.6.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^3.6.1",
@@ -50,7 +51,7 @@
     "paginated-enumerableset": "^1.0.3",
     "postcss": "^8.4.33",
     "prettier": "3.2.2",
-    "tailwind-merge": "^2.2.0",
+    "tailwind-merge": "^2.2.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3"
   }

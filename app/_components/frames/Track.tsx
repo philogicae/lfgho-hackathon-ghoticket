@@ -1,8 +1,7 @@
 'use client'
-
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useModal } from 'connectkit'
-import { useChainId, useAccount, useContractRead } from 'wagmi'
+import { useChainId, useAccount } from 'wagmi'
 import load from '@contracts/loader'
 import WrongChain from '@components/elements/WrongChain'
 import PleaseConnect from '@components/elements/PleaseConnect'
@@ -14,7 +13,7 @@ export default function Track() {
   const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
   const contract = load('GhoTicket', chainId)
-  const [isLoading, setIsLoading] = useState(false)
+  //const [isLoading, setIsLoading] = useState(false)
   useEffect(() => {
     if (!isConnected) setOpen(true)
   }, [])

@@ -1,8 +1,7 @@
 'use client'
-
 import { FaWallet } from 'react-icons/fa6'
 
-export default function PleaseConnect({ chain }: { chain?: string }) {
+export default function PleaseConnect() {
   return (
     <div className="flex flex-col items-center justify-center w-full h-full mb-10">
       <FaWallet className="mb-4 text-6xl" />

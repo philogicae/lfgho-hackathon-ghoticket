@@ -1,5 +1,4 @@
 'use client'
-
 const getBlockscan: { [chainId: number]: string } = {
   11155111: 'https://sepolia.etherscan.io/tx/',
 }

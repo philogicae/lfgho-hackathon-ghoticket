@@ -1,8 +1,12 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSnackbar, useTrigger } from '@layout/Snackbar'
 import { ContractData } from '@contracts/loader'
-import { useContractWrite, useWaitForTransaction } from 'wagmi'
+import {
+  usePrepareContractWrite,
+  useContractWrite,
+  useWaitForTransaction,
+} from 'wagmi'
 import { getBlockscan } from '@utils/chains'
 
 type TransactProps = {
@@ -24,20 +28,35 @@ const useTransact = ({
 }: TransactProps) => {
   const addSnackbar = useSnackbar()
   const { trigger, wait, done } = useTrigger()
+  const ready = useRef<boolean>(false)
+  const {
+    config,
+    isError: isPrepareError,
+    error: prepareError,
+  } = usePrepareContractWrite({
+    ...contract,
+    functionName: method,
+    args: args,
+    enabled: ready.current,
+  })
   const {
     writeAsync,
     data: tx,
-    isLoading,
-    isSuccess,
-    isError,
-    error,
-  } = useContractWrite({
-    ...contract,
-    functionName: method,
-  })
-  useWaitForTransaction({
+    isLoading: isPreLoading,
+    isSuccess: isPreSuccess,
+    isError: isPreError,
+    error: preError,
+  } = useContractWrite(config)
+  const {
+    data: receipt,
+    isLoading: isPostLoading,
+    isSuccess: isPostSuccess,
+    isError: isPostError,
+    error: postError,
+  } = useWaitForTransaction({
     hash: tx?.hash,
     onSuccess: () => {
+      ready.current = false
       done()
       addSnackbar({
         type: 'success',
@@ -46,6 +65,7 @@ const useTransact = ({
       onSuccess && onSuccess()
     },
     onError: () => {
+      ready.current = false
       done()
       addSnackbar({
         type: 'error',
@@ -67,16 +87,19 @@ const useTransact = ({
     }
   }, [tx])
   return {
-    send: () =>
-      writeAsync({ args: args }).catch(() => {
+    sendTx: () => {
+      ready.current = true
+      writeAsync?.().catch(() => {
+        ready.current = false
         addSnackbar({ type: 'error', text: 'Transaction error' })
         onError && onError()
-      }),
-    tx,
-    transactLoading: isLoading,
-    isSuccessTx: isSuccess,
-    isErrorTx: isError,
-    error,
+      })
+    },
+    tx: receipt ?? tx,
+    isLoadingTx: isPreLoading || isPostLoading,
+    isSuccessTx: isPostSuccess || isPreSuccess,
+    isErrorTx: isPrepareError || isPostError || isPreError,
+    errorTx: prepareError || preError || postError,
   }
 }
 

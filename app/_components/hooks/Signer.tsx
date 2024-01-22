@@ -1,5 +1,4 @@
 'use client'
-
 import { useRef } from 'react'
 import { useSnackbar } from '@layout/Snackbar'
 import { useSignTypedData } from 'wagmi'
@@ -11,22 +10,23 @@ export function useSigner() {
   const setTrigger = (value: boolean) => {
     trigger.current = value
   }
-  const { signTypedData, data, isSuccess, isError } = useSignTypedData({
-    onSuccess: () => {
-      setTrigger(false)
-      addSnackbar({
-        type: 'success',
-        text: 'Signed successfully',
-      })
-    },
-    onError: () => {
-      setTrigger(false)
-      addSnackbar({
-        type: 'warning',
-        text: 'Failed to sign',
-      })
-    },
-  })
+  const { signTypedData, data, isLoading, isSuccess, isError } =
+    useSignTypedData({
+      onSuccess: () => {
+        setTrigger(false)
+        addSnackbar({
+          type: 'success',
+          text: 'Signed successfully',
+        })
+      },
+      onError: () => {
+        setTrigger(false)
+        addSnackbar({
+          type: 'warning',
+          text: 'Failed to sign',
+        })
+      },
+    })
   const signRequest = ({ ...args }: any) => {
     setTrigger(true)
     addSnackbar({
@@ -40,6 +40,7 @@ export function useSigner() {
   return {
     signRequest,
     signature: data,
+    isLoadingSign: isLoading,
     isSuccessSign: isSuccess,
     isErrorSign: isError,
     convert: hexToSignature,

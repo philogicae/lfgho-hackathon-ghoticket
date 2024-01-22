@@ -1,21 +1,14 @@
 'use client'
-
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { cn } from '@utils/tw'
 import { useModal } from 'connectkit'
-import {
-  useChainId,
-  useAccount,
-  useContractRead,
-  useContractReads,
-} from 'wagmi'
+import { useChainId, useAccount, useContractReads } from 'wagmi'
 import load from '@contracts/loader'
 import { useSigner } from '@components/hooks/Signer'
 import { useTransact } from '@components/hooks/Transact'
 import WrongChain from '@components/elements/WrongChain'
 import PleaseConnect from '@components/elements/PleaseConnect'
 import Title from '@components/elements/Title'
-import Button from '@components/elements/Button'
 import {
   FaRegPaperPlane,
   FaArrowRightLong,
@@ -84,7 +77,7 @@ const generateSign1 = ({
     account: address,
     domain: {
       name: 'GhoTicket',
-      version: 'alpha',
+      version: '1',
       chainId: chainId,
       verifyingContract: contactAddr,
     },
@@ -159,7 +152,7 @@ const generateSign2 = ({
 }
 
 export default function Send() {
-  const [secrets, setSecrets] = useState(generateSecrets())
+  const secrets = useRef(generateSecrets())
   const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
   const chainId = useChainId()
@@ -174,15 +167,21 @@ export default function Send() {
     tx3: [] as any,
     results: [] as `0x${string}`[],
   })
-  const [isLoading, setIsLoading] = useState(false)
-  const { signRequest, signature, isSuccessSign, isErrorSign, convert } =
-    useSigner()
-  const { send, isSuccessTx, isErrorTx, error } = useTransact({
+  const {
+    signRequest,
+    signature,
+    isLoadingSign,
+    isSuccessSign,
+    isErrorSign,
+    convert,
+  } = useSigner()
+  const { sendTx, isLoadingTx, isSuccessTx, isErrorTx, errorTx } = useTransact({
     chainId,
     contract,
     method: 'createOrder',
     args: steps.tx3,
   })
+  const isLoading = isLoadingSign || isLoadingTx
   const { data: initReads } = useContractReads({
     contracts: [
       {
@@ -222,8 +221,8 @@ export default function Send() {
     deadline: 3600000,
     stream: false,
     nbTickets: 1,
-    orderSecret: secrets.at(0) as `0x${string}`,
-    ticketSecret: secrets.slice(1) as `0x${string}`[],
+    orderSecret: secrets.current.at(0) as `0x${string}`,
+    ticketSecret: secrets.current.slice(1) as `0x${string}`[],
   })
   const handleData = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.name === 'amount') {
@@ -259,8 +258,6 @@ export default function Send() {
       })
   }, [hdm])
   const autoSign = () => {
-    console.log('modal')
-    setIsLoading(true)
     if (steps.ready1 && !steps.ready2) {
       const sign1: Sign1 = {
         chainId: chainId,
@@ -274,7 +271,7 @@ export default function Send() {
             [address as `0x${string}`, BigInt(NONCE_GHOTICKET)]
           )
         ),
-        orderSecret: secrets[0],
+        orderSecret: secrets.current.at(0) as `0x${string}`,
       }
       signRequest({ ...generateSign1(sign1) })
     } else if (steps.ready2 && !steps.ready3) {
@@ -290,20 +287,17 @@ export default function Send() {
       }
       signRequest({ ...generateSign2(sign2) })
     } else if (steps.ready3 && steps.results.length === 0) {
-      console.log('TX3')
       const tx3 = [
         BigInt(data.amount) * BigInt(10 ** 18),
         BigInt(new Date().getTime() + data.deadline),
         data.stream ? 1 : 0,
-        secrets.slice(1, data.nbTickets + 1) as `0x${string}`[],
+        secrets.current.slice(1, data.nbTickets + 1) as `0x${string}`[],
         steps.sign2,
       ]
       setSteps({ ...steps, tx3: tx3 })
     }
-    console.log('modal out')
   }
   useEffect(() => {
-    console.log('data')
     if (isConnected)
       setSteps({
         ...steps,
@@ -314,12 +308,9 @@ export default function Send() {
           data.nbTickets <= 10 &&
           data.deadline >= 3599400,
       })
-    console.log('data out')
   }, [data])
   useEffect(() => {
-    console.log('signature')
     if (isConnected && (isSuccessSign || isErrorSign)) {
-      setIsLoading(false)
       if (signature) {
         if (!steps.ready2)
           setSteps({
@@ -335,10 +326,8 @@ export default function Send() {
           })
       }
     }
-    console.log('signature out')
   }, [signature, isSuccessSign, isErrorSign])
   useEffect(() => {
-    console.log('steps', steps)
     if (steps.results.length == 0) {
       if (steps.ready2 && !steps.ready3 && !isErrorSign) {
         setTimeout(() => {
@@ -354,23 +343,20 @@ export default function Send() {
         !isSuccessTx &&
         !isErrorTx
       ) {
-        console.log('send')
-        send()
+        sendTx()
       } else if (isSuccessTx || isErrorTx) {
-        setIsLoading(false)
         if (isSuccessTx) {
           setSteps({
             ...steps,
-            results: secrets.slice(1, data.nbTickets + 1) as `0x${string}`[],
+            results: secrets.current.slice(
+              1,
+              data.nbTickets + 1
+            ) as `0x${string}`[],
           })
         }
       }
     }
-    console.log('steps out')
   }, [steps, isSuccessTx, isErrorTx])
-  useEffect(() => {
-    console.log('isLoading', isLoading)
-  }, [isLoading])
   useEffect(() => {
     if (!isConnected) setOpen(true)
   }, [])
@@ -396,7 +382,7 @@ export default function Send() {
             <FaRegCircleXmark className="text-red-500" />
           )
         }
-        loading={isLoading}
+        loading={isLoadingSign || isLoading}
         ready={
           steps.ready1 && !isLoading
             ? 'halo-button text-lime-300 cursor-pointer'
@@ -586,7 +572,7 @@ export default function Send() {
               </div>
             </div>
             <div className="flex flex-col items-center justify-center h-full w-full text-xs break-words">
-              {!error ? (
+              {!errorTx ? (
                 steps.results.map((ticket, key) => (
                   <span key={key}>
                     {ticket.slice(0, 15) + '...' + ticket.slice(-15)}
@@ -594,7 +580,7 @@ export default function Send() {
                 ))
               ) : (
                 <div className="p-2 h-64 w-80 items-center justify-center text-xs break-words text-red-400">
-                  ERROR: {error.message}
+                  ERROR: {errorTx.message}
                 </div>
               )}
             </div>

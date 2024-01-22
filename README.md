@@ -23,5 +23,5 @@ Given a wallet address, you can track the status of its created tickets and also
 Everything is done except the frontend (70%). Now I plan to finish the project 100% and to add:
 
 - Support for any ERC20 token
-- Add credit delegation tickets for $GHO
+- Credit delegation tickets for $GHO
 - Maybe CCIP for crosschain transfers using a trick

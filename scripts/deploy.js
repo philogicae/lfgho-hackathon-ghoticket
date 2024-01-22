@@ -3,18 +3,18 @@ const fs = require('fs')
 const path = require('path')
 require('dotenv').config()
 
-dest = 'app/_contracts'
-abis = path.join(dest, 'abis')
+const dest = 'app/_contracts'
+const abis = path.join(dest, 'abis')
 if (!fs.existsSync(abis)) {
   fs.mkdirSync(abis, { recursive: true })
 }
-registry = path.join(dest, 'registry.json')
+const registry = path.join(dest, 'registry.json')
 if (!fs.existsSync(registry)) {
   fs.writeFileSync(registry, `{}`, 'utf-8')
 }
 
 function saveABI(contractName) {
-  abi = path.join(
+  const abi = path.join(
     `artifacts/contracts/${contractName}.sol/${contractName}.json`
   )
   fs.copyFileSync(abi, path.join(abis, `${contractName}.json`))

@@ -106,7 +106,7 @@ contract GhoTicket is Context, EIP712 {
   error TicketExpired(bytes32 orderId, bytes32 ticketId, uint256 deadline);
   error InvalidSigner(address creator, address signer);
 
-  constructor() EIP712('GhoTicket', 'alpha') {}
+  constructor() EIP712('GhoTicket', '1') {}
 
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparatorV4();
