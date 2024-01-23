@@ -14,6 +14,7 @@ import {
   FaArrowRightLong,
   FaCheck,
   FaCheckDouble,
+  FaFileSignature,
   FaRegCircleCheck,
   FaRegCircleXmark,
 } from 'react-icons/fa6'
@@ -383,10 +384,12 @@ export default function Send() {
             <FaCheck />
           ) : !steps.ready3 ? (
             <FaCheckDouble />
+          ) : !isSuccessTx && !isErrorTx ? (
+            <FaFileSignature className="ml-2" />
           ) : isSuccessTx ? (
-            <FaRegCircleCheck className="text-green-500" />
+            <FaRegCircleCheck className="text-green-500 text-xl" />
           ) : (
-            <FaRegCircleXmark className="text-red-500" />
+            <FaRegCircleXmark className="text-red-500 text-xl" />
           )
         }
         loading={isLoading}
@@ -419,7 +422,9 @@ export default function Send() {
                   className={cn(
                     steps.ready1 && !steps.ready2
                       ? 'animate-pulse text-orange-400 font-bold'
-                      : ''
+                      : steps.ready2
+                        ? 'text-green-400'
+                        : ''
                   )}
                 >
                   1. Sign Tickets
@@ -429,7 +434,9 @@ export default function Send() {
                   className={cn(
                     steps.ready2 && !steps.ready3
                       ? 'animate-pulse text-orange-400 font-bold'
-                      : ''
+                      : steps.ready3
+                        ? 'text-green-400'
+                        : ''
                   )}
                 >
                   2. Sign Approval
@@ -437,16 +444,23 @@ export default function Send() {
                 <FaArrowRightLong className="h-5 w-5 p-1" />
                 <span
                   className={cn(
-                    steps.ready3 && steps.results.length === 0
+                    steps.ready3 &&
+                      steps.results.length === 0 &&
+                      !isSuccessTx &&
+                      !isErrorTx
                       ? 'animate-pulse text-orange-400 font-bold'
-                      : ''
+                      : isSuccessTx
+                        ? 'text-green-400'
+                        : isErrorTx
+                          ? 'text-red-400'
+                          : ''
                   )}
                 >
                   3. Deposit $GHO
                 </span>
                 <div />
               </div>
-              <div className="tracking-normal flex flex-wrap justify-between p-2 pb-0 border-b-1 border-cyan-800">
+              <div className="tracking-normal flex flex-wrap justify-between p-2 pb-2 border-b-1 border-cyan-800">
                 <div className="p-0">
                   <div className="text-sm px-2 py-0 items-start w-64 flex flex-row">
                     <span className="text-sm font-mono">$GHO Amount</span>
@@ -503,7 +517,7 @@ export default function Send() {
                     {Number(hdm.hours + hdm.days + hdm.months) > 0 &&
                       !(steps.ready2 || isLoading) && (
                         <span
-                          className="ml-6 text-amber-600 cursor-pointer text-xs font-mono tracking-tighter ring-[0.5px] ring-amber-600 rounded-sm px-0.5"
+                          className="ml-2 text-amber-600 cursor-pointer text-xs font-mono tracking-tighter ring-[0.5px] ring-amber-600 rounded-sm px-0.5"
                           onClick={() =>
                             setHdm({ hours: '', days: '', months: '' })
                           }
@@ -524,7 +538,7 @@ export default function Send() {
                       onChange={handleDeadline}
                       classNames={inputClassNames}
                       startContent={
-                        <span className="absolute top-0.5 left-1 text-xs font-mono text-gray-400">
+                        <span className="absolute top-0.5 left-1 text-xs font-mono text-gray-400 pointer-events-none">
                           Months
                         </span>
                       }
@@ -540,7 +554,7 @@ export default function Send() {
                       onChange={handleDeadline}
                       classNames={inputClassNames}
                       startContent={
-                        <span className="absolute top-0.5 left-1 text-xs font-mono text-gray-400">
+                        <span className="absolute top-0.5 left-1 text-xs font-mono text-gray-400 pointer-events-none">
                           Days
                         </span>
                       }
@@ -556,14 +570,17 @@ export default function Send() {
                       onChange={handleDeadline}
                       classNames={inputClassNames}
                       startContent={
-                        <span className="absolute top-0.5 left-1 text-xs font-mono text-gray-400">
+                        <span className="absolute top-0.5 left-1 text-xs font-mono text-gray-400 pointer-events-none">
                           Hours
                         </span>
                       }
                     />
                   </div>
-                  <div className="text-sm w-full flex justify-between pl-1.5 pr-2 items-center h-8 text-gray-400 font-mono">
-                    <span className="tracking-tighter">Expiration:</span>
+                  <div className="text-sm w-full flex justify-between px-2 items-center h-6 pt-1.5 text-gray-400 font-mono">
+                    <div className="flex flex-row">
+                      <span className="tracking-tighter">Ends on</span>
+                      <FaArrowRightLong className="h-5 w-5 p-1 pt-[5px] ml-1" />
+                    </div>
                     {data.deadline ? (
                       <span className="text-amber-500 font-bold tracking-wide">
                         {new Date(
@@ -590,7 +607,7 @@ export default function Send() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-center justify-center h-full w-full text-xs break-words overflow-x-hidden">
+            <div className="flex flex-col items-center justify-start h-full w-full text-xs break-words overflow-x-hidden">
               {!errorTx ? (
                 steps.results.map((ticket, key) => (
                   <span key={key}>

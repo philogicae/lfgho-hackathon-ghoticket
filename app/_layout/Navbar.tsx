@@ -45,7 +45,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
             ETHGlobal-2024 <FaEthereum className="px-1 text-lg" /> LFGHO
             Hackathon
           </a>
-          <div className="flex flex-row text-lg pb-1">
+          <div className="flex flex-row text-lg pb-0.5">
             <a
               href="https://github.com/philogicae"
               className="pr-1 hover:text-cyan-300 active:text-cyan-300"
