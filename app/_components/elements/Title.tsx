@@ -22,7 +22,7 @@ export default function Title({
   return (
     <div className="flex flex-row items-center">
       <Button
-        className={'w-20 h-8 ml-0.5'}
+        className={'w-20 h-8 ml-1'}
         label={
           <div className="text-sm flex flex-row items-center justify-center">
             <FaArrowLeft />
@@ -34,12 +34,12 @@ export default function Title({
       <Button
         label={label}
         disabled={true}
-        className={'ml-3 mr-2 bg-indigo-700 w-44 text-md font-extrabold'}
+        className={'ml-2.5 mr-2 bg-indigo-700 w-40 text-md font-extrabold'}
       />
-      <div className="overflow-hidden rounded-lg ml-0.5">
+      <div className="overflow-hidden rounded-lg">
         <div
           className={cn(
-            'relative z-10 border-2 border-transparent',
+            'relative z-10 border-3 border-transparent',
             ready ? 'rainbow-button cursor-pointer' : '',
             loading ? 'loading-button' : ''
           )}

@@ -47,10 +47,10 @@ const generateSecrets = (): `0x${string}`[] =>
   Array.from({ length: 11 }, () => keccak256(toHex(nanoid(32))))
 
 type Data = {
-  amount: number
-  deadline: number
+  amount: number | string
+  deadline: number | string
   stream: boolean
-  nbTickets: number
+  nbTickets: number | string
   orderSecret: `0x${string}`
   ticketSecret: `0x${string}`[]
 }
@@ -215,16 +215,23 @@ export default function Send() {
   const NONCE_GHO = Number(initReads?.[2].result)
   const TYPEHASH_GHOTICKET = initReads?.[3].result as `0x${string}`
   const NONCE_GHOTICKET = Number(initReads?.[4].result)
-  const [hdm, setHdm] = useState({ hours: 1, days: 0, months: 0 })
+  const [hdm, setHdm] = useState({ hours: '', days: '', months: '' })
   const [data, setData] = useState<Data>({
-    amount: 0,
-    deadline: 3600000,
+    amount: '',
+    deadline: '',
     stream: false,
-    nbTickets: 1,
+    nbTickets: '',
     orderSecret: secrets.current.at(0) as `0x${string}`,
     ticketSecret: secrets.current.slice(1) as `0x${string}`[],
   })
   const handleData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.name != 'stream' && e.target.value === '0') {
+      setData({
+        ...data,
+        [e.target.name]: '',
+      })
+      return
+    }
     if (e.target.name === 'amount') {
       const num = Number(e.target.value)
       e.target.value = (num > MAX ? MAX : num < 0 ? 0 : num).toString()
@@ -246,7 +253,7 @@ export default function Send() {
     const value = Number(e.target.value)
     setHdm({
       ...hdm,
-      [e.target.name]: value > 99 ? 99 : value < 0 ? 0 : value,
+      [e.target.name]: value > 99 ? 99 : value < 1 ? '' : value,
     })
   }
   useEffect(() => {
@@ -254,7 +261,9 @@ export default function Send() {
       setData({
         ...data,
         ['deadline']:
-          hdm.hours * 3600000 + hdm.days * 86400000 + hdm.months * 2592000000,
+          Number(hdm.hours) * 3600000 +
+          Number(hdm.days) * 86400000 +
+          Number(hdm.months) * 2592000000,
       })
   }, [hdm])
   const autoSign = () => {
@@ -289,9 +298,9 @@ export default function Send() {
     } else if (steps.ready3 && steps.results.length === 0) {
       const tx3 = [
         BigInt(data.amount) * BigInt(10 ** 18),
-        BigInt(new Date().getTime() + data.deadline),
+        BigInt(new Date().getTime() + Number(data.deadline)),
         data.stream ? 1 : 0,
-        secrets.current.slice(1, data.nbTickets + 1) as `0x${string}`[],
+        secrets.current.slice(1, Number(data.nbTickets) + 1) as `0x${string}`[],
         steps.sign2,
       ]
       setSteps({ ...steps, tx3: tx3 })
@@ -302,11 +311,11 @@ export default function Send() {
       setSteps({
         ...steps,
         ready1:
-          data.amount > 0 &&
-          data.amount <= MAX &&
-          data.nbTickets > 0 &&
-          data.nbTickets <= 10 &&
-          data.deadline >= 3599400,
+          Number(data.amount) > 0 &&
+          Number(data.amount) <= MAX &&
+          Number(data.nbTickets) > 0 &&
+          Number(data.nbTickets) <= 10 &&
+          Number(data.deadline) >= 3599400,
       })
   }, [data])
   useEffect(() => {
@@ -350,7 +359,7 @@ export default function Send() {
             ...steps,
             results: secrets.current.slice(
               1,
-              data.nbTickets + 1
+              Number(data.nbTickets) + 1
             ) as `0x${string}`[],
           })
         }
@@ -445,11 +454,9 @@ export default function Send() {
                   type="number"
                   min={0}
                   max={MAX}
+                  placeholder=". . ."
                   value={data.amount.toString()}
                   onChange={handleData}
-                  errorMessage={
-                    0 > data.amount || data.amount > MAX ? 'Invalid amount' : ''
-                  }
                   classNames={textClassNames}
                   startContent={
                     <button
@@ -470,15 +477,11 @@ export default function Send() {
                   name="nbTickets"
                   size="sm"
                   type="number"
-                  min={1}
+                  min={0}
                   max={10}
+                  placeholder=". . ."
                   value={data.nbTickets.toString()}
                   onChange={handleData}
-                  errorMessage={
-                    1 > data.nbTickets || data.nbTickets > 10
-                      ? 'Invalid number'
-                      : ''
-                  }
                   classNames={textClassNames}
                   startContent={
                     <button
@@ -494,13 +497,12 @@ export default function Send() {
                 <div className="text-sm px-2 py-0 items-start w-full flex flex-row">
                   <span className="text-sm font-mono">Deadline</span>
                   <span className="pl-0.5 text-red-500">*</span>
-                  {hdm.hours * 3600000 +
-                    hdm.days * 86400000 +
-                    hdm.months * 2592000000 >
-                    3600000 && (
+                  {Number(hdm.hours + hdm.days + hdm.months) > 0 && (
                     <div
                       className="pl-2 pt-0.5 text-amber-300 cursor-pointer text-xs"
-                      onClick={() => setHdm({ hours: 1, days: 0, months: 0 })}
+                      onClick={() =>
+                        setHdm({ hours: '', days: '', months: '' })
+                      }
                     >
                       RESET
                     </div>
@@ -512,8 +514,9 @@ export default function Send() {
                     label="Months"
                     size="sm"
                     type="number"
-                    min={hdm.days + hdm.hours === 0 ? 1 : 0}
+                    min={0}
                     max={99}
+                    placeholder=". . ."
                     value={hdm.months.toString()}
                     onChange={handleDeadline}
                     classNames={textClassNames}
@@ -523,8 +526,9 @@ export default function Send() {
                     label="Days"
                     size="sm"
                     type="number"
-                    min={hdm.months + hdm.hours === 0 ? 1 : 0}
+                    min={0}
                     max={99}
+                    placeholder=". . ."
                     value={hdm.days.toString()}
                     onChange={handleDeadline}
                     classNames={textClassNames}
@@ -534,15 +538,11 @@ export default function Send() {
                     label="Hours"
                     size="sm"
                     type="number"
-                    min={hdm.months + hdm.days === 0 ? 1 : 0}
+                    min={0}
                     max={99}
+                    placeholder=". . ."
                     value={hdm.hours.toString()}
                     onChange={handleDeadline}
-                    errorMessage={
-                      hdm.months + hdm.days + hdm.hours === 0
-                        ? 'Min : 1 hour'
-                        : ''
-                    }
                     classNames={textClassNames}
                   />
                 </div>
@@ -550,7 +550,7 @@ export default function Send() {
                   Expiration :
                   <span className="pl-6 text-amber-300 tracking-wider font-semibold">
                     {new Date(
-                      new Date().getTime() + data.deadline
+                      new Date().getTime() + Number(data.deadline)
                     ).toLocaleString()}
                   </span>
                 </div>
