@@ -38,6 +38,10 @@ const useTransact = ({
     functionName: method,
     args: args,
     enabled: ready.current,
+    onError: () => {
+      ready.current = false
+      addSnackbar({ type: 'error', text: 'Transaction error' })
+    },
   })
   const {
     writeAsync,

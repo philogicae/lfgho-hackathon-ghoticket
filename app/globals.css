@@ -17,6 +17,15 @@ body {
   margin: auto;
 }
 
+.no-arrow::-webkit-outer-spin-button,
+.no-arrow::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-arrow {
+  -moz-appearance: textfield;
+}
+
 .halo-text {
   text-shadow: 0 0 10px #00ffff;
 }
@@ -45,13 +54,46 @@ body {
   filter: drop-shadow(0 0 5px #00ffff);
 }
 
-.no-arrow::-webkit-outer-spin-button,
-.no-arrow::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+.rainbow-button::before {
+  position: absolute;
+  content: '';
+  top: -2px;
+  left: -2px;
+  height: 36px;
+  width: 84px;
+  background: #ff0000;
+  z-index: -1;
+  border-radius: 8px;
+  transition: 0.3s;
+  animation: rainbow 3s linear infinite;
 }
-.no-arrow {
-  -moz-appearance: textfield;
+
+@keyframes rainbow {
+  50% {
+    filter: hue-rotate(350deg);
+  }
+}
+
+.loading-button::before {
+  position: absolute;
+  content: '';
+  top: 5px;
+  left: -20px;
+  width: 150%;
+  height: 70%;
+  background: #ffffff;
+  z-index: -1;
+  transform: rotate(45deg);
+  animation: loading 3s linear infinite;
+}
+
+@keyframes loading {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .background {

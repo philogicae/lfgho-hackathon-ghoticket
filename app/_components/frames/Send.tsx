@@ -152,7 +152,7 @@ const generateSign2 = ({
 }
 
 export default function Send() {
-  const secrets = useRef(generateSecrets())
+  const secrets = useRef<`0x${string}`[]>(generateSecrets())
   const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
   const chainId = useChainId()
@@ -374,27 +374,23 @@ export default function Send() {
             <FaCheck />
           ) : !steps.ready3 ? (
             <FaCheckDouble />
-          ) : !isSuccessTx && !isErrorTx ? (
-            <FaRegPaperPlane className="rotate-12" />
           ) : isSuccessTx ? (
             <FaRegCircleCheck className="text-green-500" />
           ) : (
             <FaRegCircleXmark className="text-red-500" />
           )
         }
-        loading={isLoadingSign || isLoading}
-        ready={
-          steps.ready1 && !isLoading
-            ? 'halo-button text-lime-300 cursor-pointer'
-            : ''
-        }
+        loading={isLoading}
+        ready={steps.ready1 && !isLoading && !isSuccessTx && !isErrorTx}
         onClick={autoSign}
       />
       <div
         className={cn(
           'flex flex-col h-full border border-cyan-400 mt-2 items-center justify-start',
           !isConnected || !contract ? 'w-full' : '',
-          isLoading || steps.ready2 ? 'pointer-events-none' : ''
+          steps.ready2 && !isLoading && !isSuccessTx && !isErrorTx
+            ? 'pointer-events-none'
+            : ''
         )}
       >
         {!isConnected ? (
