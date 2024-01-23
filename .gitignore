@@ -45,3 +45,4 @@ hackathon
 # Hardhat files
 cache
 artifacts
+fleek.config.json

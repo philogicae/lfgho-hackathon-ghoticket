@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "next lint",
     "vercel": "vercel deploy --prod",
+    "fleek": "fleek sites deploy",
     "node": "hardhat node",
     "solhint": "solhint contracts/**/*.sol",
     "flatten": "hardhat flatten > artifacts/flatten.sol",
