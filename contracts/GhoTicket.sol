@@ -83,7 +83,7 @@ contract GhoTicket is Context, EIP712 {
   event TicketReserved(
     address indexed claimer,
     bytes32 reservation,
-    uint256 timestamp
+    uint256 unlock
   );
   event TicketClaimed(
     bytes32 indexed orderId,
@@ -173,7 +173,7 @@ contract GhoTicket is Context, EIP712 {
     for (uint256 i = 0; i < ticketIds.length; i++) {
       nbUnclaimed += _claims[ticketIds[i]].orderId > 0 ? 0 : 1;
     }
-    uint256 amount = order.amount / nbUnclaimed;
+    uint256 amount = (order.amount * nbUnclaimed) / ticketIds.length;
     if (amount > 0) {
       _orders[orderId].closed = 1;
       GHO.transfer(creator, amount);
@@ -187,12 +187,20 @@ contract GhoTicket is Context, EIP712 {
     if (_reservations[reservation] > 0) {
       revert ReservationNotChanged(reservation);
     }
-    _reservations[reservation] = block.timestamp;
-    emit TicketReserved(_msgSender(), reservation, block.timestamp);
+    uint256 unlock = block.timestamp + SAFETY_DELAY;
+    _reservations[reservation] = unlock;
+    emit TicketReserved(_msgSender(), reservation, unlock);
   }
 
   function claimTicket(Ticket memory ticket) public {
     address claimer = _msgSender();
+    bytes32 reservation = keccak256(
+      abi.encodePacked(claimer, ticket.orderSecret, ticket.ticketSecret)
+    );
+    uint256 reservationTime = _reservations[reservation];
+    if (reservationTime == 0 || block.timestamp < reservationTime) {
+      revert ReservationNotFound(reservation);
+    }
     (bytes32 ticketId, uint256 amount, uint8 streamed) = _permitTicket(ticket);
     _claims[ticketId] = Claim(ticket.orderId, claimer);
     _accountClaims[claimer].add(ticketId);
@@ -236,15 +244,6 @@ contract GhoTicket is Context, EIP712 {
   function _permitTicket(
     Ticket memory ticket
   ) private view returns (bytes32 ticketId, uint256 amount, uint8 streamed) {
-    bytes32 reservation = keccak256(
-      abi.encodePacked(_msgSender(), ticket.orderSecret, ticket.ticketSecret)
-    );
-    uint256 reservationTime = _reservations[reservation];
-    if (
-      reservationTime == 0 || block.timestamp < reservationTime + SAFETY_DELAY
-    ) {
-      revert ReservationNotFound(reservation);
-    }
     ticketId = keccak256(
       abi.encodePacked(ticket.orderSecret, ticket.ticketSecret)
     );
@@ -268,6 +267,8 @@ contract GhoTicket is Context, EIP712 {
             PERMIT_TICKET_TYPEHASH,
             order.creator,
             order.amount,
+            order.deadline,
+            order.streamed,
             ticket.orderId,
             ticket.orderSecret
           )
@@ -311,11 +312,19 @@ contract GhoTicket is Context, EIP712 {
     }
   }
 
-  function getOrderFull(
+  function getFullOrder(
     bytes32 orderId
   ) public view returns (OrderFullData memory data) {
     data.order = getOrder(orderId);
     data.status = getStatus(orderId);
+  }
+
+  function getFullOrderBatch(
+    bytes32[] memory orderIds
+  ) public view returns (OrderFullData[] memory data) {
+    for (uint256 i = 0; i < orderIds.length; i++) {
+      data[i] = getFullOrder(orderIds[i]);
+    }
   }
 
   function getTicket(
@@ -326,6 +335,44 @@ contract GhoTicket is Context, EIP712 {
     data.claimer = claim.claimer;
     data.order = getOrder(claim.orderId);
     data.amount = data.order.order.amount / data.order.nbTickets;
+  }
+
+  function getNbClaims(address claimer) public view returns (uint256 nbClaims) {
+    nbClaims = _accountClaims[claimer].length();
+  }
+
+  function getClaims(
+    address claimer,
+    uint256 start,
+    uint256 size
+  ) external view returns (bytes32[] memory data) {
+    data = _accountClaims[claimer].subset(start, size);
+  }
+
+  function getFullClaims(
+    address claimer,
+    uint256 start,
+    uint256 size
+  ) external view returns (TicketData[] memory data) {
+    bytes32[] memory ticketIds = _accountClaims[claimer].subset(start, size);
+    for (uint256 i = 0; i < ticketIds.length; i++) {
+      data[i] = getTicket(ticketIds[i]);
+    }
+  }
+
+  function getWithdrawnStreamBalances(
+    bytes32[] memory ticketIds
+  ) external view returns (uint256[] memory withdrawn) {
+    for (uint256 i = 0; i < ticketIds.length; i++) {
+      withdrawn[i] = _accounts[_claims[ticketIds[i]].claimer]
+        .withdrawnStreamBalances[ticketIds[i]];
+    }
+  }
+
+  function getReservation(
+    bytes32 reservation
+  ) external view returns (uint256 unlock) {
+    unlock = _reservations[reservation];
   }
 
   function isClaimed(bytes32 ticketId) public view returns (bool) {
