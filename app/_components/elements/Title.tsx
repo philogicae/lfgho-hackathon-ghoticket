@@ -41,7 +41,7 @@ export default function Title({
           className={cn(
             'relative z-10 border-3 border-transparent',
             ready ? 'rainbow-button cursor-pointer' : '',
-            loading ? 'loading-button' : ''
+            loading ? 'loading-button cursor-not-allowed' : ''
           )}
         >
           <Button

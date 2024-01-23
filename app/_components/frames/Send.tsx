@@ -28,8 +28,8 @@ import {
 } from 'viem'
 import { nanoid } from 'nanoid'
 
-const textClassNames = {
-  base: 'p-0.5 rounded',
+const inputClassNames = {
+  base: 'p-0.5 rounded hover:ring-1 hover:ring-amber-500 focus:ring-1 focus:ring-amber-500',
   label: '!text-white truncate text-sm font-mono',
   mainWrapper: 'h-9 w-full',
   inputWrapper: '!rounded !bg-gray-900 py-0 px-1 h-9',
@@ -39,7 +39,7 @@ const textClassNames = {
 
 const switchClassNames = {
   wrapper:
-    'bg-gray-950 group-data-[selected=true]:bg-amber-700 ring-1 ring-amber-300 ring-offset-2 ring-offset-gray-950',
+    'bg-gray-950 group-data-[selected=true]:bg-amber-700 ring-1 ring-amber-500 ring-offset-2 ring-offset-gray-950',
   label: 'text-white ml-1 truncate',
 }
 
@@ -341,11 +341,11 @@ export default function Send() {
       if (steps.ready2 && !steps.ready3 && !isErrorSign) {
         setTimeout(() => {
           autoSign()
-        }, 1500)
+        }, 1000)
       } else if (steps.ready3 && steps.tx3.length === 0 && !isErrorTx) {
         setTimeout(() => {
           autoSign()
-        }, 1500)
+        }, 1000)
       } else if (
         steps.ready3 &&
         steps.tx3.length > 0 &&
@@ -395,11 +395,8 @@ export default function Send() {
       />
       <div
         className={cn(
-          'flex flex-col h-full border border-cyan-400 mt-2 items-center justify-start',
-          !isConnected || !contract ? 'w-full' : '',
-          steps.ready2 && !isLoading && !isSuccessTx && !isErrorTx
-            ? 'pointer-events-none'
-            : ''
+          'flex flex-col h-full border border-cyan-400 mt-2 items-center justify-start overflow-hidden',
+          !isConnected || !contract ? 'w-full' : ''
         )}
       >
         {!isConnected ? (
@@ -407,167 +404,193 @@ export default function Send() {
         ) : !contract ? (
           <WrongChain />
         ) : (
-          <div className="flex flex-col w-full h-full">
-            <span className="border-b-1 text-cyan-300 border-cyan-300 flex w-full justify-between">
-              <div />
-              <span
-                className={cn(
-                  steps.ready1 && !steps.ready2
-                    ? 'animate-pulse text-orange-400 font-bold'
-                    : ''
-                )}
-              >
-                1. Sign Tickets
-              </span>
-              <FaArrowRightLong className="h-6 w-6 p-1" />
-              <span
-                className={cn(
-                  steps.ready2 && !steps.ready3
-                    ? 'animate-pulse text-orange-400 font-bold'
-                    : ''
-                )}
-              >
-                2. Sign Approval
-              </span>
-              <FaArrowRightLong className="p-1 h-6 w-6" />
-              <span
-                className={cn(
-                  steps.ready3 && steps.results.length === 0
-                    ? 'animate-pulse text-orange-400 font-bold'
-                    : ''
-                )}
-              >
-                3. Deposit $GHO
-              </span>
-              <div />
-            </span>
-            <div className="tracking-normal flex flex-wrap justify-between p-2 pb-0 border-b-1 border-cyan-800">
-              <div className="p-0">
-                <div className="text-sm px-2 py-0 items-start w-64 flex flex-row">
-                  <span className="text-sm font-mono">$GHO Amount</span>
-                  <span className="pl-0.5 text-red-500">*</span>
-                </div>
-                <Input
-                  isRequired
-                  name="amount"
-                  size="sm"
-                  type="number"
-                  min={0}
-                  max={MAX}
-                  placeholder=". . ."
-                  value={data.amount.toString()}
-                  onChange={handleData}
-                  classNames={textClassNames}
-                  startContent={
-                    <button
-                      className="focus:outline-none text-xs text-amber-300"
-                      onClick={() => setData({ ...data, amount: MAX })}
-                    >
-                      MAX
-                    </button>
-                  }
-                />
-              </div>
-              <div className="p-0 w-16">
-                <div className="text-sm px-2 py-0 justify-center w-full flex flex-row">
-                  <span className="text-sm font-mono">Tickets</span>
-                </div>
-                <Input
-                  isRequired
-                  name="nbTickets"
-                  size="sm"
-                  type="number"
-                  min={0}
-                  max={10}
-                  placeholder=". . ."
-                  value={data.nbTickets.toString()}
-                  onChange={handleData}
-                  classNames={textClassNames}
-                  startContent={
-                    <button
-                      className="focus:outline-none text-xs text-amber-300"
-                      onClick={() => setData({ ...data, nbTickets: 10 })}
-                    >
-                      MAX
-                    </button>
-                  }
-                />
-              </div>
-              <div className="p-0">
-                <div className="text-sm px-2 py-0 items-start w-full flex flex-row">
-                  <span className="text-sm font-mono">Deadline</span>
-                  <span className="pl-0.5 text-red-500">*</span>
-                  {Number(hdm.hours + hdm.days + hdm.months) > 0 && (
-                    <div
-                      className="pl-2 pt-0.5 text-amber-300 cursor-pointer text-xs"
-                      onClick={() =>
-                        setHdm({ hours: '', days: '', months: '' })
-                      }
-                    >
-                      RESET
-                    </div>
+          <>
+            <div
+              className={cn(
+                'flex flex-col w-full',
+                steps.ready2 || isLoading
+                  ? 'pointer-events-none cursor-not-allowed'
+                  : ''
+              )}
+            >
+              <div className="border-b-1 text-cyan-300 border-cyan-300 flex w-full items-center justify-between font-mono tracking-tighter text-xs">
+                <div />
+                <span
+                  className={cn(
+                    steps.ready1 && !steps.ready2
+                      ? 'animate-pulse text-orange-400 font-bold'
+                      : ''
                   )}
-                </div>
-                <div className="flex flex-row w-64">
-                  <Input
-                    name="months"
-                    label="Months"
-                    size="sm"
-                    type="number"
-                    min={0}
-                    max={99}
-                    placeholder=". . ."
-                    value={hdm.months.toString()}
-                    onChange={handleDeadline}
-                    classNames={textClassNames}
-                  />
-                  <Input
-                    name="days"
-                    label="Days"
-                    size="sm"
-                    type="number"
-                    min={0}
-                    max={99}
-                    placeholder=". . ."
-                    value={hdm.days.toString()}
-                    onChange={handleDeadline}
-                    classNames={textClassNames}
-                  />
-                  <Input
-                    name="hours"
-                    label="Hours"
-                    size="sm"
-                    type="number"
-                    min={0}
-                    max={99}
-                    placeholder=". . ."
-                    value={hdm.hours.toString()}
-                    onChange={handleDeadline}
-                    classNames={textClassNames}
-                  />
-                </div>
-                <div className="text-sm w-full flex justify-start pl-2 items-center h-8">
-                  Expiration :
-                  <span className="pl-6 text-amber-300 tracking-wider font-semibold">
-                    {new Date(
-                      new Date().getTime() + Number(data.deadline)
-                    ).toLocaleString()}
-                  </span>
-                </div>
+                >
+                  1. Sign Tickets
+                </span>
+                <FaArrowRightLong className="h-5 w-5 p-1" />
+                <span
+                  className={cn(
+                    steps.ready2 && !steps.ready3
+                      ? 'animate-pulse text-orange-400 font-bold'
+                      : ''
+                  )}
+                >
+                  2. Sign Approval
+                </span>
+                <FaArrowRightLong className="h-5 w-5 p-1" />
+                <span
+                  className={cn(
+                    steps.ready3 && steps.results.length === 0
+                      ? 'animate-pulse text-orange-400 font-bold'
+                      : ''
+                  )}
+                >
+                  3. Deposit $GHO
+                </span>
+                <div />
               </div>
-              <div className="p-0 flex flex-col w-16 items-center justify-start">
-                <span className="text-sm pb-1 font-mono">Stream</span>
-                <Switch
-                  size="sm"
-                  name="stream"
-                  checked={data.stream}
-                  onChange={handleData}
-                  classNames={switchClassNames}
-                  className="pl-2 pt-1"
-                />
+              <div className="tracking-normal flex flex-wrap justify-between p-2 pb-0 border-b-1 border-cyan-800">
+                <div className="p-0">
+                  <div className="text-sm px-2 py-0 items-start w-64 flex flex-row">
+                    <span className="text-sm font-mono">$GHO Amount</span>
+                  </div>
+                  <Input
+                    isRequired
+                    name="amount"
+                    size="sm"
+                    type="number"
+                    min={0}
+                    max={MAX}
+                    placeholder="__"
+                    value={data.amount.toString()}
+                    onChange={handleData}
+                    classNames={inputClassNames}
+                    startContent={
+                      <button
+                        className="focus:outline-none text-xs text-amber-600 font-mono font-semibold tracking-widest cursor-pointer"
+                        onClick={() => setData({ ...data, amount: MAX })}
+                      >
+                        MAX
+                      </button>
+                    }
+                  />
+                </div>
+                <div className="p-0 w-16">
+                  <div className="text-sm px-2 py-0 justify-center w-full flex flex-row">
+                    <span className="text-sm font-mono">Tickets</span>
+                  </div>
+                  <Input
+                    isRequired
+                    name="nbTickets"
+                    size="sm"
+                    type="number"
+                    min={0}
+                    max={10}
+                    placeholder="__"
+                    value={data.nbTickets.toString()}
+                    onChange={handleData}
+                    classNames={inputClassNames}
+                    startContent={
+                      <button
+                        className="focus:outline-none text-xs text-amber-600 font-mono font-semibold tracking-widest cursor-pointer"
+                        onClick={() => setData({ ...data, nbTickets: 10 })}
+                      >
+                        MAX
+                      </button>
+                    }
+                  />
+                </div>
+                <div className="p-0">
+                  <div className="text-sm px-2 py-0 items-center w-full flex flex-row">
+                    <span className="text-sm font-mono">Deadline</span>
+                    {Number(hdm.hours + hdm.days + hdm.months) > 0 &&
+                      !(steps.ready2 || isLoading) && (
+                        <span
+                          className="ml-6 text-amber-600 cursor-pointer text-xs font-mono tracking-tighter ring-[0.5px] ring-amber-600 rounded-sm px-0.5"
+                          onClick={() =>
+                            setHdm({ hours: '', days: '', months: '' })
+                          }
+                        >
+                          reset↓
+                        </span>
+                      )}
+                  </div>
+                  <div className="flex flex-row w-64">
+                    <Input
+                      name="months"
+                      size="sm"
+                      type="number"
+                      min={0}
+                      max={99}
+                      placeholder="__"
+                      value={hdm.months.toString()}
+                      onChange={handleDeadline}
+                      classNames={inputClassNames}
+                      startContent={
+                        <span className="absolute top-0.5 left-1 text-xs font-mono text-gray-400">
+                          Months
+                        </span>
+                      }
+                    />
+                    <Input
+                      name="days"
+                      size="sm"
+                      type="number"
+                      min={0}
+                      max={99}
+                      placeholder="__"
+                      value={hdm.days.toString()}
+                      onChange={handleDeadline}
+                      classNames={inputClassNames}
+                      startContent={
+                        <span className="absolute top-0.5 left-1 text-xs font-mono text-gray-400">
+                          Days
+                        </span>
+                      }
+                    />
+                    <Input
+                      name="hours"
+                      size="sm"
+                      type="number"
+                      min={0}
+                      max={99}
+                      placeholder="__"
+                      value={hdm.hours.toString()}
+                      onChange={handleDeadline}
+                      classNames={inputClassNames}
+                      startContent={
+                        <span className="absolute top-0.5 left-1 text-xs font-mono text-gray-400">
+                          Hours
+                        </span>
+                      }
+                    />
+                  </div>
+                  <div className="text-sm w-full flex justify-between pl-1.5 pr-2 items-center h-8 text-gray-400 font-mono">
+                    <span className="tracking-tighter">Expiration:</span>
+                    {data.deadline ? (
+                      <span className="text-amber-500 font-bold tracking-wide">
+                        {new Date(
+                          new Date().getTime() + Number(data.deadline)
+                        ).toLocaleString()}
+                      </span>
+                    ) : (
+                      <span className="font-bold tracking-wide">
+                        --/--/---- --:--:--
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="p-0 flex flex-col w-16 items-center justify-start">
+                  <span className="text-sm pb-1 font-mono">Stream</span>
+                  <Switch
+                    size="sm"
+                    name="stream"
+                    checked={data.stream}
+                    onChange={handleData}
+                    classNames={switchClassNames}
+                    className="pl-2 pt-1"
+                  />
+                </div>
               </div>
             </div>
-            <div className="flex flex-col items-center justify-center h-full w-full text-xs break-words">
+            <div className="flex flex-col items-center justify-center h-full w-full text-xs break-words overflow-x-hidden">
               {!errorTx ? (
                 steps.results.map((ticket, key) => (
                   <span key={key}>
@@ -580,7 +603,7 @@ export default function Send() {
                 </div>
               )}
             </div>
-          </div>
+          </>
         )}
       </div>
     </>
