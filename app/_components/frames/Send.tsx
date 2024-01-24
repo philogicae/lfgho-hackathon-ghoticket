@@ -48,10 +48,10 @@ const generateSecrets = (): `0x${string}`[] =>
   Array.from({ length: 11 }, () => keccak256(toHex(nanoid(32))))
 
 type Data = {
-  amount: number | string
-  deadline: number | string
+  amount: number
+  deadline: number
   stream: boolean
-  nbTickets: number | string
+  nbTickets: number
   orderSecret: `0x${string}`
   ticketSecret: `0x${string}`[]
 }
@@ -60,8 +60,10 @@ type Sign1 = {
   chainId: number
   contactAddr: `0x${string}`
   typehash: `0x${string}`
-  address: `0x${string}`
+  creator: `0x${string}`
   amount: bigint
+  deadline: bigint
+  streamed: number
   orderId: `0x${string}`
   orderSecret: `0x${string}`
 }
@@ -69,13 +71,15 @@ const generateSign1 = ({
   chainId,
   contactAddr,
   typehash,
-  address,
+  creator,
   amount,
+  deadline,
+  streamed,
   orderId,
   orderSecret,
 }: Sign1): any => {
   return {
-    account: address,
+    account: creator,
     domain: {
       name: 'GhoTicket',
       version: '1',
@@ -86,16 +90,20 @@ const generateSign1 = ({
     types: {
       SignOrder: [
         { name: 'typehash', type: 'bytes32' },
-        { name: 'address', type: 'address' },
+        { name: 'creator', type: 'address' },
         { name: 'amount', type: 'uint256' },
+        { name: 'deadline', type: 'uint256' },
+        { name: 'streamed', type: 'uint8' },
         { name: 'orderId', type: 'bytes32' },
         { name: 'orderSecret', type: 'bytes32' },
       ],
     } as const satisfies TypedData,
     message: {
       typehash: typehash,
-      address: address,
+      creator: creator,
       amount: amount,
+      deadline: deadline,
+      streamed: streamed,
       orderId: orderId,
       orderSecret: orderSecret,
     },
@@ -168,6 +176,7 @@ export default function Send() {
     tx3: [] as any,
     results: [] as `0x${string}`[],
   })
+  const signatureDeadline = useRef<bigint>(BigInt(0))
   const {
     signRequest,
     signature,
@@ -216,12 +225,12 @@ export default function Send() {
   const NONCE_GHO = Number(initReads?.[2].result)
   const TYPEHASH_GHOTICKET = initReads?.[3].result as `0x${string}`
   const NONCE_GHOTICKET = Number(initReads?.[4].result)
-  const [hdm, setHdm] = useState({ hours: '', days: '', months: '' })
+  const [hdm, setHdm] = useState({ hours: 0, days: 0, months: 0 })
   const [data, setData] = useState<Data>({
-    amount: '',
-    deadline: '',
+    amount: 0,
+    deadline: 0,
     stream: false,
-    nbTickets: '',
+    nbTickets: 0,
     orderSecret: secrets.current.at(0) as `0x${string}`,
     ticketSecret: secrets.current.slice(1) as `0x${string}`[],
   })
@@ -254,7 +263,7 @@ export default function Send() {
     const value = Number(e.target.value)
     setHdm({
       ...hdm,
-      [e.target.name]: value > 99 ? 99 : value < 1 ? '' : value,
+      [e.target.name]: value > 99 ? 99 : value < 1 ? 0 : value,
     })
   }
   useEffect(() => {
@@ -262,9 +271,10 @@ export default function Send() {
       setData({
         ...data,
         ['deadline']:
-          Number(hdm.hours) * 3600000 +
-          Number(hdm.days) * 86400000 +
-          Number(hdm.months) * 2592000000,
+          new Date().getTime() +
+          hdm.hours * 3600000 +
+          hdm.days * 86400000 +
+          hdm.months * 2592000000,
       })
   }, [hdm])
   const autoSign = () => {
@@ -273,8 +283,10 @@ export default function Send() {
         chainId: chainId,
         contactAddr: contract?.address as `0x${string}`,
         typehash: TYPEHASH_GHOTICKET,
-        address: address as `0x${string}`,
+        creator: address as `0x${string}`,
         amount: BigInt(data.amount) * BigInt(10 ** 18),
+        deadline: BigInt(Math.floor(data.deadline / 1000)),
+        streamed: Number(data.stream),
         orderId: keccak256(
           encodePacked(
             ['address', 'uint256'],
@@ -285,6 +297,9 @@ export default function Send() {
       }
       signRequest({ ...generateSign1(sign1) })
     } else if (steps.ready2 && !steps.ready3) {
+      signatureDeadline.current = BigInt(
+        Math.floor(new Date().getTime() / 1000 + 600)
+      )
       const sign2: Sign2 = {
         chainId: chainId,
         contactAddr: gho?.address as `0x${string}`,
@@ -293,16 +308,17 @@ export default function Send() {
         spender: contract!.address as `0x${string}`,
         value: BigInt(data.amount) * BigInt(10 ** 18),
         nonce: BigInt(NONCE_GHO),
-        deadline: BigInt(new Date().getTime() + 600),
+        deadline: signatureDeadline.current,
       }
       signRequest({ ...generateSign2(sign2) })
     } else if (steps.ready3 && steps.results.length === 0) {
       const tx3 = [
         BigInt(data.amount) * BigInt(10 ** 18),
-        BigInt(new Date().getTime() + Number(data.deadline)),
+        BigInt(Math.floor(data.deadline / 1000)),
         data.stream ? 1 : 0,
-        secrets.current.slice(1, Number(data.nbTickets) + 1) as `0x${string}`[],
+        secrets.current.slice(1, data.nbTickets + 1) as `0x${string}`[],
         steps.sign2,
+        signatureDeadline.current,
       ]
       setSteps({ ...steps, tx3: tx3 })
     }
@@ -312,11 +328,11 @@ export default function Send() {
       setSteps({
         ...steps,
         ready1:
-          Number(data.amount) > 0 &&
-          Number(data.amount) <= MAX &&
-          Number(data.nbTickets) > 0 &&
-          Number(data.nbTickets) <= 10 &&
-          Number(data.deadline) >= 3599400,
+          data.amount > 0 &&
+          data.amount <= MAX &&
+          data.nbTickets > 0 &&
+          data.nbTickets <= 10 &&
+          hdm.months + hdm.days + hdm.hours > 0,
       })
   }, [data])
   useEffect(() => {
@@ -360,7 +376,7 @@ export default function Send() {
             ...steps,
             results: secrets.current.slice(
               1,
-              Number(data.nbTickets) + 1
+              data.nbTickets + 1
             ) as `0x${string}`[],
           })
         }
@@ -473,7 +489,7 @@ export default function Send() {
                     min={0}
                     max={MAX}
                     placeholder="__"
-                    value={data.amount.toString()}
+                    value={data.amount ? data.amount.toString() : ''}
                     onChange={handleData}
                     classNames={inputClassNames}
                     startContent={
@@ -498,7 +514,7 @@ export default function Send() {
                     min={0}
                     max={10}
                     placeholder="__"
-                    value={data.nbTickets.toString()}
+                    value={data.nbTickets ? data.nbTickets.toString() : ''}
                     onChange={handleData}
                     classNames={inputClassNames}
                     startContent={
@@ -514,12 +530,12 @@ export default function Send() {
                 <div className="p-0">
                   <div className="text-sm px-2 py-0 items-center w-full flex flex-row">
                     <span className="text-sm font-mono">Deadline</span>
-                    {Number(hdm.hours + hdm.days + hdm.months) > 0 &&
+                    {hdm.hours + hdm.days + hdm.months > 0 &&
                       !(steps.ready2 || isLoading) && (
                         <span
                           className="ml-2 text-amber-600 cursor-pointer text-xs font-mono tracking-tighter ring-[0.5px] ring-amber-600 rounded-sm px-0.5"
                           onClick={() =>
-                            setHdm({ hours: '', days: '', months: '' })
+                            setHdm({ hours: 0, days: 0, months: 0 })
                           }
                         >
                           reset↓
@@ -534,7 +550,7 @@ export default function Send() {
                       min={0}
                       max={99}
                       placeholder="__"
-                      value={hdm.months.toString()}
+                      value={hdm.months ? hdm.months.toString() : ''}
                       onChange={handleDeadline}
                       classNames={inputClassNames}
                       startContent={
@@ -550,7 +566,7 @@ export default function Send() {
                       min={0}
                       max={99}
                       placeholder="__"
-                      value={hdm.days.toString()}
+                      value={hdm.days ? hdm.days.toString() : ''}
                       onChange={handleDeadline}
                       classNames={inputClassNames}
                       startContent={
@@ -566,7 +582,7 @@ export default function Send() {
                       min={0}
                       max={99}
                       placeholder="__"
-                      value={hdm.hours.toString()}
+                      value={hdm.hours ? hdm.hours.toString() : ''}
                       onChange={handleDeadline}
                       classNames={inputClassNames}
                       startContent={
@@ -576,16 +592,14 @@ export default function Send() {
                       }
                     />
                   </div>
-                  <div className="text-sm w-full flex justify-between px-2 items-center h-6 pt-1.5 text-gray-400 font-mono">
+                  <div className="text-sm w-full flex justify-between pl-2 pr-1 items-center h-6 pt-1.5 text-gray-400 font-mono">
                     <div className="flex flex-row">
                       <span className="tracking-tighter">Ends on</span>
-                      <FaArrowRightLong className="h-5 w-5 p-1 pt-[5px] ml-1" />
+                      <FaArrowRightLong className="h-5 w-5 p-1 pt-[5px]" />
                     </div>
                     {data.deadline ? (
                       <span className="text-amber-500 font-bold tracking-wide">
-                        {new Date(
-                          new Date().getTime() + Number(data.deadline)
-                        ).toLocaleString()}
+                        {new Date(data.deadline).toLocaleString()}
                       </span>
                     ) : (
                       <span className="font-bold tracking-wide">

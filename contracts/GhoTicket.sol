@@ -117,11 +117,12 @@ contract GhoTicket is Context, EIP712 {
     uint256 deadline,
     uint8 streamed,
     bytes32[] calldata tickets,
-    Signature calldata signature
+    Signature calldata signature,
+    uint256 signatureDeadline
   ) public {
     if (
       amount == 0 ||
-      deadline <= block.timestamp ||
+      deadline < block.timestamp ||
       streamed > 1 ||
       tickets.length == 0
     ) {
@@ -132,7 +133,7 @@ contract GhoTicket is Context, EIP712 {
       creator,
       address(this),
       amount,
-      deadline,
+      signatureDeadline,
       signature.v,
       signature.r,
       signature.s

@@ -7,8 +7,11 @@ html {
   background: #050011;
 }
 body {
-  @apply dark absolute h-full w-full overflow-hidden tracking-tighter antialiased text-white;
+  @apply dark absolute h-full w-full overflow-hidden tracking-tighter text-white;
   background: #050011;
+}
+* {
+  @apply antialiased;
 }
 
 .manual-y-center::before,
