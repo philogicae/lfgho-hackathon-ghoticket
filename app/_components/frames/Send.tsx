@@ -74,38 +74,50 @@ export default function Send() {
     args: steps.tx3,
   })
   const isLoading = isLoadingSign || isLoadingTx
-  const { data: initReads } = useContractReads({
-    contracts: [
-      {
-        ...gho,
-        functionName: 'balanceOf',
-        args: [address!],
-      },
-      {
-        ...gho,
-        functionName: 'PERMIT_TYPEHASH',
-      },
-      {
-        ...gho,
-        functionName: 'nonces',
-        args: [address!],
-      },
-      {
-        ...contract,
-        functionName: 'PERMIT_TICKET_TYPEHASH',
-      },
-      {
-        ...contract,
-        functionName: 'getAccountNonce',
-        args: [address!],
-      },
-    ],
-  })
-  const MAX = Number((initReads![0].result as bigint) / BigInt(10 ** 18))
-  const TYPEHASH_GHO = initReads![1].result as `0x${string}`
-  const NONCE_GHO = Number(initReads![2].result)
-  const TYPEHASH_GHOTICKET = initReads![3].result as `0x${string}`
-  const NONCE_GHOTICKET = Number(initReads![4].result)
+  const { data: initReads } = useContractReads(
+    isConnected
+      ? {
+          contracts: [
+            {
+              ...gho,
+              functionName: 'balanceOf',
+              args: [address!],
+            },
+            {
+              ...gho,
+              functionName: 'PERMIT_TYPEHASH',
+            },
+            {
+              ...gho,
+              functionName: 'nonces',
+              args: [address!],
+            },
+            {
+              ...contract,
+              functionName: 'PERMIT_TICKET_TYPEHASH',
+            },
+            {
+              ...contract,
+              functionName: 'getAccountNonce',
+              args: [address!],
+            },
+          ],
+          watch: false,
+        }
+      : {}
+  )
+  let MAX: any,
+    TYPEHASH_GHO: any,
+    NONCE_GHO: any,
+    TYPEHASH_GHOTICKET: any,
+    NONCE_GHOTICKET: any
+  if (initReads) {
+    MAX = Number((initReads![0].result as bigint) / BigInt(10 ** 18))
+    TYPEHASH_GHO = initReads![1].result as `0x${string}`
+    NONCE_GHO = Number(initReads![2].result)
+    TYPEHASH_GHOTICKET = initReads![3].result as `0x${string}`
+    NONCE_GHOTICKET = Number(initReads![4].result)
+  }
   const [hdm, setHdm] = useState({ hours: 0, days: 0, months: 0 })
   const [data, setData] = useState<{
     amount: number
