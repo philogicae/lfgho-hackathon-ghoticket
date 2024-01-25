@@ -28,12 +28,7 @@ const useTransact = ({
 }: TransactProps) => {
   const addSnackbar = useSnackbar()
   const { trigger, wait, done } = useTrigger()
-  const {
-    config,
-    isSuccess: isPrepareSuccess,
-    isError: isPrepareError,
-    error: prepareError,
-  } = usePrepareContractWrite({
+  const { config, isSuccess: isPrepareSuccess } = usePrepareContractWrite({
     ...contract,
     functionName: method,
     args: args,

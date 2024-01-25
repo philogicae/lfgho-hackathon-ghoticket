@@ -34,7 +34,7 @@ export default function Title({
       <Button
         label={label}
         disabled={true}
-        className={'ml-2.5 mr-2 bg-indigo-700 w-40 text-md font-extrabold'}
+        className={'ml-2.5 mr-2 bg-[#3909bd] w-40 text-md font-extrabold'}
       />
       <div className="overflow-hidden rounded-lg">
         <div

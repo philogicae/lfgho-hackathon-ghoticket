@@ -37,7 +37,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col w-full h-full items-start justify-center pt-8 sm:pt-0 px-2">
           {children}
         </div>
-        <div className="flex flex-row w-full h-9 items-center justify-between p-2 text-sm font-mono text-blue-600">
+        <div className="flex flex-row w-full h-9 items-center justify-between p-2 text-sm font-mono text-[#1938fc]">
           <a
             href="https://ethglobal.com/showcase/ghoticket-0hkpx"
             className="flex flex-row hover:underline items-center justify-center hover:text-cyan-300 active:text-cyan-300"

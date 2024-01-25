@@ -17,7 +17,6 @@ import {
   FaCheckDouble,
   FaFileSignature,
   FaRegCircleCheck,
-  FaRegCircleXmark,
 } from 'react-icons/fa6'
 import { Input, Switch } from '@nextui-org/react'
 import { keccak256, toHex, encodePacked, Hex, Signature } from 'viem'
@@ -41,6 +40,10 @@ const PRECISION = 8
 const floatRegex = new RegExp(`^([0-9]+[.]?[0-9]{0,${PRECISION}})?$`)
 const generateHex = (): Hex => keccak256(toHex(nanoid(32)))
 const generateBatchHex = (): Hex[] => Array.from({ length: 10 }, generateHex)
+const generateTicketIds = (orderSecret: Hex, ticketSecrets: Hex[]): Hex[] =>
+  ticketSecrets.map((ticketSecret) =>
+    keccak256(encodePacked(['bytes32', 'bytes32'], [orderSecret, ticketSecret]))
+  )
 
 export default function Send() {
   const { isConnected, address } = useAccount()
@@ -55,8 +58,10 @@ export default function Send() {
     sign2: {} as Signature,
     ready3: false,
     tx3: [] as any,
-    tickets: [] as Hex[],
+    executed: false,
   })
+  const orderSecret = useRef<Hex>(generateHex())
+  const ticketSecrets = useRef<Hex[]>(generateBatchHex())
   const bigAmount = useRef<bigint>(BigInt(0))
   const signatureDeadline = useRef<bigint>(BigInt(0))
   const { signRequest, signature, isLoadingSign, isErrorSign, convert } =
@@ -115,14 +120,14 @@ export default function Send() {
     stream: boolean
     nbTickets: number
     orderSecret: Hex
-    ticketSecrets: Hex[]
+    ticketIds: Hex[]
   }>({
     amount: '',
     deadline: 0,
     stream: false,
     nbTickets: 0,
-    orderSecret: generateHex(),
-    ticketSecrets: generateBatchHex(),
+    orderSecret: orderSecret.current,
+    ticketIds: generateTicketIds(orderSecret.current, ticketSecrets.current),
   })
   const restrict = (n: any, min: number, max: number) =>
     Number(n) > max ? max : Number(n) < min ? min : n
@@ -189,18 +194,20 @@ export default function Send() {
           deadline: signatureDeadline.current,
         }),
       })
-    } else if (steps.ready3 && steps.tickets.length === 0) {
+    } else if (steps.ready3 && !isReadyTx) {
       setSteps({
         ...steps,
         tx3: [
           bigAmount.current,
           BigInt(Math.floor(data.deadline / 1000)),
           Number(data.stream),
-          data.ticketSecrets.slice(0, data.nbTickets),
+          data.ticketIds.slice(0, data.nbTickets),
           steps.sign2,
           signatureDeadline.current,
         ],
       })
+    } else if (steps.ready3 && isReadyTx && !steps.executed) {
+      sendTx()
     }
   }
   useEffect(() => {
@@ -232,19 +239,19 @@ export default function Send() {
     }
   }, [signature])
   useEffect(() => {
-    if (isConnected && steps.tickets.length == 0) {
+    if (isConnected && !steps.executed) {
       if (!isSuccessTx) {
         if (steps.ready2 && !steps.ready3 && !isLoadingSign && !isErrorSign) {
           submit()
         } else if (steps.ready3 && !isReadyTx) {
           submit()
         } else if (steps.ready3 && isReadyTx && !isLoadingTx && !isErrorTx) {
-          sendTx()
+          submit()
         }
       } else {
         setSteps({
           ...steps,
-          tickets: data.ticketSecrets.slice(0, data.nbTickets),
+          executed: true,
         })
       }
     }
@@ -266,16 +273,14 @@ export default function Send() {
             <FaCheck />
           ) : !steps.ready3 ? (
             <FaCheckDouble />
-          ) : !isSuccessTx && !isErrorTx ? (
+          ) : !isSuccessTx ? (
             <FaFileSignature className="ml-2" />
-          ) : isSuccessTx ? (
-            <FaRegCircleCheck className="text-green-500 text-xl" />
           ) : (
-            <FaRegCircleXmark className="text-red-500 text-xl" />
+            <FaRegCircleCheck className="text-green-500 text-xl" />
           )
         }
         loading={isLoading}
-        ready={steps.ready1 && !isLoading && !isSuccessTx && !isErrorTx}
+        ready={steps.ready1 && !isLoading && !isSuccessTx}
         onClick={submit}
       />
       <div
@@ -326,16 +331,11 @@ export default function Send() {
                 <FaArrowRightLong className="h-5 w-5 p-1" />
                 <span
                   className={cn(
-                    steps.ready3 &&
-                      steps.tickets.length === 0 &&
-                      !isSuccessTx &&
-                      !isErrorTx
+                    steps.ready3 && !steps.executed
                       ? 'animate-pulse text-orange-400 font-bold'
-                      : isSuccessTx
+                      : steps.executed
                         ? 'text-green-400'
-                        : isErrorTx
-                          ? 'text-red-400'
-                          : ''
+                        : ''
                   )}
                 >
                   3. Deposit $GHO
@@ -345,7 +345,7 @@ export default function Send() {
               <div className="tracking-normal flex flex-wrap justify-between p-2 pb-2 border-b-1 border-cyan-800">
                 <div className="p-0">
                   <div className="text-sm px-2 py-0 items-start w-64 flex flex-row">
-                    <span className="text-sm font-mono">$GHO Amount</span>
+                    <span className="text-sm font-mono">Total Amount $GHO</span>
                   </div>
                   <Input
                     isRequired
@@ -353,6 +353,7 @@ export default function Send() {
                     size="sm"
                     type="text"
                     placeholder="__"
+                    inputMode="decimal"
                     value={data.amount}
                     onChange={handleData}
                     classNames={inputClassNames}
@@ -361,7 +362,7 @@ export default function Send() {
                         className="text-xs text-amber-600 font-mono font-semibold tracking-widest cursor-pointer"
                         tabIndex={-1}
                         onClick={() =>
-                          setData({ ...data, amount: MAX.string() })
+                          setData({ ...data, amount: MAX.toString() })
                         }
                       >
                         MAX
@@ -490,16 +491,17 @@ export default function Send() {
               </div>
             </div>
             <div className="flex flex-col items-center justify-center h-full w-full text-sm font-mono break-words overflow-x-hidden">
-              {steps.tickets.map((ticket, key) => (
-                <span key={key}>
-                  {key +
-                    1 +
-                    ': ' +
-                    ticket.slice(0, 15) +
-                    '...' +
-                    ticket.slice(-15)}
-                </span>
-              ))}
+              {steps.executed &&
+                data.ticketIds.map((ticketId, key) => (
+                  <span key={key}>
+                    {key +
+                      1 +
+                      ': ' +
+                      ticketId.slice(0, 15) +
+                      '...' +
+                      ticketId.slice(-15)}
+                  </span>
+                ))}
             </div>
           </>
         )}
