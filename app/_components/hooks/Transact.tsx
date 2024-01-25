@@ -27,6 +27,7 @@ const useTransact = ({
   onError,
 }: TransactProps) => {
   const addSnackbar = useSnackbar()
+  const { trigger: preTrigger, wait: preWait, done: preDone } = useTrigger()
   const { trigger, wait, done } = useTrigger()
   const { config, isSuccess: isPrepareSuccess } = usePrepareContractWrite({
     ...contract,
@@ -72,20 +73,29 @@ const useTransact = ({
   })
   useEffect(() => {
     if (tx?.hash) {
+      preDone()
       wait()
       addSnackbar({
         type: 'info',
         text: 'Transaction submitted',
         link: getBlockscan[chainId] + tx!.hash,
-        duration: 0,
+        chrono: true,
         trigger: trigger,
       })
     }
   }, [tx])
   return {
     sendTx: () => {
+      preWait()
+      addSnackbar({
+        type: 'info',
+        text: 'Signing transaction...',
+        duration: 0,
+        trigger: preTrigger,
+      })
       writeAsync!().catch(() => {
-        addSnackbar({ type: 'error', text: 'Transaction error' })
+        preDone()
+        addSnackbar({ type: 'warning', text: 'Transaction rejected' })
         onError && onError()
       })
     },

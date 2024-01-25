@@ -70,6 +70,7 @@ export default function Snackbar({ children }: { children: React.ReactNode }) {
               text={snack.text}
               link={snack.link}
               duration={snack.duration}
+              chrono={snack.chrono}
               trigger={snack.trigger}
               className={snack.className}
               onClose={() => {

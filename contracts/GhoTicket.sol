@@ -122,15 +122,18 @@ contract GhoTicket is Context, EIP712 {
     Signature calldata signature,
     uint256 signatureDeadline
   ) public {
+    address creator = _msgSender();
+    uint256 nonce = _accounts[creator].nonce;
+    bytes32 orderId = keccak256(abi.encodePacked(creator, nonce));
     if (
       amount == 0 ||
       deadline < block.timestamp ||
       streamed > 1 ||
-      tickets.length == 0
+      tickets.length == 0 ||
+      _orders[orderId].createdAt > 0
     ) {
       revert InvalidOrder();
     }
-    address creator = _msgSender();
     GHO.permit(
       creator,
       address(this),
@@ -141,8 +144,6 @@ contract GhoTicket is Context, EIP712 {
       signature.s
     );
     GHO.transferFrom(creator, address(this), amount);
-    uint256 nonce = _accounts[creator].nonce;
-    bytes32 orderId = keccak256(abi.encodePacked(creator, nonce));
     _accounts[creator].nonce = nonce + 1;
     _orders[orderId] = Order(
       creator,

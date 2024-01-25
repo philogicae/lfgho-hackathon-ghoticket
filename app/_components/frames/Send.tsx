@@ -102,7 +102,11 @@ export default function Send() {
         }
       : {}
   )
-  let DECIMALS: number, MAX: any, NONCE_GHO: bigint, NONCE_GHOTICKET: bigint
+  let DECIMALS: number,
+    MAX: any,
+    NONCE_GHO: bigint,
+    NONCE_GHOTICKET: bigint,
+    orderId: Hex
   if (initReads) {
     DECIMALS = initReads![0].result as number
     MAX =
@@ -112,6 +116,9 @@ export default function Send() {
       10 ** PRECISION
     NONCE_GHO = initReads![2].result as bigint
     NONCE_GHOTICKET = initReads![3].result as bigint
+    orderId = keccak256(
+      encodePacked(['address', 'uint256'], [address!, NONCE_GHOTICKET])
+    )
   }
   const [hdm, setHdm] = useState({ hours: 0, days: 0, months: 0 })
   const [data, setData] = useState<{
@@ -173,9 +180,7 @@ export default function Send() {
           chainId: chainId,
           contactAddr: contract!.address,
           creator: address!,
-          orderId: keccak256(
-            encodePacked(['address', 'uint256'], [address!, NONCE_GHOTICKET])
-          ),
+          orderId: orderId,
           orderSecret: data.orderSecret,
         }),
       })
@@ -492,16 +497,18 @@ export default function Send() {
             </div>
             <div className="flex flex-col items-center justify-center h-full w-full text-sm font-mono break-words overflow-x-hidden">
               {steps.executed &&
-                data.ticketIds.map((ticketId, key) => (
-                  <span key={key}>
-                    {key +
-                      1 +
-                      ': ' +
-                      ticketId.slice(0, 15) +
-                      '...' +
-                      ticketId.slice(-15)}
-                  </span>
-                ))}
+                data.ticketIds
+                  .slice(0, data.nbTickets)
+                  .map((ticketId, key) => (
+                    <span key={key}>
+                      {key +
+                        1 +
+                        ': ' +
+                        ticketId.slice(0, 15) +
+                        '...' +
+                        ticketId.slice(-15)}
+                    </span>
+                  ))}
             </div>
           </>
         )}

@@ -7,6 +7,7 @@ export type SnackbarType = {
   text: React.ReactNode
   link?: string
   duration?: number
+  chrono?: boolean
   trigger?: MutableRefObject<boolean>
   className?: string
 }

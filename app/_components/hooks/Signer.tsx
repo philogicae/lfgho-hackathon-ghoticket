@@ -1,6 +1,6 @@
 'use client'
 import { useRef } from 'react'
-import { useSnackbar } from '@layout/Snackbar'
+import { useSnackbar, useTrigger } from '@layout/Snackbar'
 import { useSignTypedData } from 'wagmi'
 import { Hex, hexToSignature, verifyTypedData } from 'viem'
 
@@ -8,10 +8,7 @@ export function useSigner() {
   const dataToSign = useRef<any>({})
   const isValidSignature = useRef<boolean>(true)
   const addSnackbar = useSnackbar()
-  const trigger = useRef<boolean>(false)
-  const setTrigger = (value: boolean) => {
-    trigger.current = value
-  }
+  const { trigger, wait, done } = useTrigger()
   const {
     signTypedData,
     data: signature,
@@ -20,23 +17,23 @@ export function useSigner() {
     isError,
   } = useSignTypedData({
     onSuccess: () => {
-      setTrigger(false)
+      done()
       addSnackbar({
         type: 'success',
         text: 'Signed successfully',
       })
     },
     onError: () => {
-      setTrigger(false)
+      done()
       addSnackbar({
         type: 'warning',
-        text: 'Failed to sign',
+        text: 'Signature rejected',
       })
     },
   })
   const signRequest = ({ ...args }: any) => {
     dataToSign.current = args
-    setTrigger(true)
+    wait()
     addSnackbar({
       type: 'info',
       text: 'Requesting signature...',
@@ -52,6 +49,13 @@ export function useSigner() {
       signature: hex,
     }).then((isValid) => {
       isValidSignature.current = isValid
+      if (!isValid) {
+        done()
+        addSnackbar({
+          type: 'error',
+          text: 'Signature invalid',
+        })
+      }
     })
     return hexToSignature(hex)
   }

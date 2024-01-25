@@ -20,7 +20,7 @@ const icons: { [key: string]: IconType } = {
 const colors: { [key: string]: string } = {
   success: 'bg-green-700',
   error: 'bg-red-700',
-  warning: 'bg-amber-600',
+  warning: 'bg-amber-700',
   info: 'bg-blue-700',
 }
 
@@ -30,24 +30,30 @@ export default function Notification({
   text,
   link,
   duration = 5,
+  chrono = false,
   trigger,
   className,
   onClose,
 }: SnackbarProps & { id: string }) {
   const Icon = icons[type]
-  const [seconds, setSeconds] = useState(duration)
-  const timer = duration > 0 ? seconds : '•'
+  const [seconds, setSeconds] = useState(chrono ? 1 : duration)
+  const timer = chrono || duration > 0 ? seconds : '•'
   useEffect(() => {
     if (typeof trigger === 'object' && !trigger.current)
-      setTimeout(onClose, 1000)
-    if (duration > 0) {
+      setTimeout(onClose, 750)
+    if (chrono) {
+      const timer = setInterval(() => {
+        setSeconds(seconds + 1)
+      }, 950)
+      return () => clearInterval(timer)
+    } else if (duration > 0) {
       const timer = setInterval(() => {
         setSeconds(seconds - 1)
         if (seconds === 1) {
           onClose()
           clearInterval(timer)
         }
-      }, 800)
+      }, 950)
       return () => clearInterval(timer)
     }
   })
