@@ -30,6 +30,7 @@ const useTransact = ({
   const { trigger, wait, done } = useTrigger()
   const {
     config,
+    isSuccess: isPrepareSuccess,
     isError: isPrepareError,
     error: prepareError,
   } = usePrepareContractWrite({
@@ -94,11 +95,11 @@ const useTransact = ({
       })
     },
     tx: receipt ?? tx,
-    isReadyTx: !!writeAsync,
+    isReadyTx: isPrepareSuccess,
     isLoadingTx: isPreLoading || isPostLoading,
-    isSuccessTx: isPostSuccess || isPreSuccess,
-    isErrorTx: isPrepareError || isPostError || isPreError,
-    errorTx: prepareError || preError || postError,
+    isSuccessTx: isPreSuccess && isPostSuccess,
+    isErrorTx: isPreError || isPostError,
+    errorTx: preError || postError,
   }
 }
 

@@ -32,20 +32,19 @@ const inputClassNames = {
   input: '!text-white !bg-gray-900 text-right no-arrow px-1',
   errorMessage: 'text-right',
 }
-
 const switchClassNames = {
   wrapper:
     'bg-gray-950 group-data-[selected=true]:bg-amber-700 ring-1 !ring-amber-500 ring-offset-2 ring-offset-gray-950',
   label: 'text-white ml-1 truncate',
 }
-
+const PRECISION = 8
+const floatRegex = new RegExp(`^([0-9]+[.]?[0-9]{0,${PRECISION}})?$`)
 const generateHex = (): Hex => keccak256(toHex(nanoid(32)))
-
 const generateBatchHex = (): Hex[] => Array.from({ length: 10 }, generateHex)
 
 export default function Send() {
-  const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
+  const { setOpen, openSwitchNetworks } = useModal()
   const chainId = useChainId()
   const gho = load('Gho', chainId)
   const contract = load('GhoTicket', chainId)
@@ -58,15 +57,10 @@ export default function Send() {
     tx3: [] as any,
     tickets: [] as Hex[],
   })
+  const bigAmount = useRef<bigint>(BigInt(0))
   const signatureDeadline = useRef<bigint>(BigInt(0))
-  const {
-    signRequest,
-    signature,
-    isLoadingSign,
-    isSuccessSign,
-    isErrorSign,
-    convert,
-  } = useSigner()
+  const { signRequest, signature, isLoadingSign, isErrorSign, convert } =
+    useSigner()
   const { sendTx, isReadyTx, isLoadingTx, isSuccessTx, isErrorTx } =
     useTransact({
       chainId,
@@ -79,6 +73,10 @@ export default function Send() {
     isConnected
       ? {
           contracts: [
+            {
+              ...gho,
+              functionName: 'decimals',
+            },
             {
               ...gho,
               functionName: 'balanceOf',
@@ -99,51 +97,46 @@ export default function Send() {
         }
       : {}
   )
-  let MAX: any, NONCE_GHO: bigint, NONCE_GHOTICKET: bigint
+  let DECIMALS: number, MAX: any, NONCE_GHO: bigint, NONCE_GHOTICKET: bigint
   if (initReads) {
-    MAX = Number((initReads![0].result as bigint) / BigInt(10 ** 18))
-    NONCE_GHO = initReads![1].result as bigint
-    NONCE_GHOTICKET = initReads![2].result as bigint
+    DECIMALS = initReads![0].result as number
+    MAX =
+      Number(
+        (initReads![1].result as bigint) / BigInt(10 ** (DECIMALS - PRECISION))
+      ) /
+      10 ** PRECISION
+    NONCE_GHO = initReads![2].result as bigint
+    NONCE_GHOTICKET = initReads![3].result as bigint
   }
   const [hdm, setHdm] = useState({ hours: 0, days: 0, months: 0 })
   const [data, setData] = useState<{
-    amount: number
+    amount: any
     deadline: number
     stream: boolean
     nbTickets: number
     orderSecret: Hex
     ticketSecrets: Hex[]
   }>({
-    amount: 0,
+    amount: '',
     deadline: 0,
     stream: false,
     nbTickets: 0,
     orderSecret: generateHex(),
     ticketSecrets: generateBatchHex(),
   })
+  const restrict = (n: any, min: number, max: number) =>
+    Number(n) > max ? max : Number(n) < min ? min : n
   const handleData = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.name != 'stream' && e.target.value === '0') {
-      setData({
-        ...data,
-        [e.target.name]: '',
-      })
-      return
-    }
+    let value = e.target.value
     if (e.target.name === 'amount') {
-      const num = Number(e.target.value)
-      e.target.value = (num > MAX ? MAX : num < 0 ? 0 : num).toString()
+      value = value.replace(',', '.')
+      value = floatRegex.test(value) ? restrict(value, 0, MAX) : data.amount
     } else if (e.target.name === 'nbTickets') {
-      const num = Number(e.target.value)
-      e.target.value = (num > 10 ? 10 : num < 1 ? 1 : num).toString()
+      value = restrict(Math.round(Number(value)), 0, 10)
     }
     setData({
       ...data,
-      [e.target.name]:
-        e.target.type === 'checkbox'
-          ? e.target.checked
-          : e.target.type === 'number'
-            ? Number(e.target.value)
-            : e.target.value,
+      [e.target.name]: e.target.name === 'stream' ? e.target.checked : value,
     })
   }
   const handleDeadline = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,18 +157,19 @@ export default function Send() {
           hdm.months * 2592000000,
       })
   }, [hdm])
-  const autoSign = () => {
+  const submit = () => {
     if (steps.ready1 && !steps.ready2) {
+      const tempAmount =
+        BigInt(Number(data.amount * 10 ** PRECISION)) *
+        BigInt(10 ** (DECIMALS - PRECISION))
+      bigAmount.current = tempAmount - (tempAmount % BigInt(data.nbTickets))
       signRequest({
         ...generateTicketPermit({
           chainId: chainId,
           contactAddr: contract!.address,
           creator: address!,
           orderId: keccak256(
-            encodePacked(
-              ['address', 'uint256'],
-              [address!, BigInt(NONCE_GHOTICKET)]
-            )
+            encodePacked(['address', 'uint256'], [address!, NONCE_GHOTICKET])
           ),
           orderSecret: data.orderSecret,
         }),
@@ -190,8 +184,8 @@ export default function Send() {
           contactAddr: gho!.address,
           owner: address!,
           spender: contract!.address!,
-          value: BigInt(data.amount) * BigInt(10 ** 18),
-          nonce: BigInt(NONCE_GHO),
+          value: bigAmount.current,
+          nonce: NONCE_GHO,
           deadline: signatureDeadline.current,
         }),
       })
@@ -199,7 +193,7 @@ export default function Send() {
       setSteps({
         ...steps,
         tx3: [
-          BigInt(data.amount) * BigInt(10 ** 18),
+          bigAmount.current,
           BigInt(Math.floor(data.deadline / 1000)),
           Number(data.stream),
           data.ticketSecrets.slice(0, data.nbTickets),
@@ -214,40 +208,40 @@ export default function Send() {
       setSteps({
         ...steps,
         ready1:
-          data.amount > 0 &&
-          data.amount <= MAX &&
+          Number(data.amount) > 0 &&
+          Number(data.amount) <= MAX &&
           data.nbTickets > 0 &&
           data.nbTickets <= 10 &&
           hdm.months + hdm.days + hdm.hours > 0,
       })
   }, [data])
   useEffect(() => {
-    if (isConnected && (isSuccessSign || isErrorSign)) {
-      if (signature) {
-        if (!steps.ready2)
-          setSteps({
-            ...steps,
-            sign1: convert(signature),
-            ready2: true,
-          })
-        else if (!steps.ready3)
-          setSteps({
-            ...steps,
-            sign2: convert(signature),
-            ready3: true,
-          })
-      }
+    if (isConnected && signature) {
+      if (!steps.ready2)
+        setSteps({
+          ...steps,
+          sign1: convert(signature),
+          ready2: true,
+        })
+      else if (!steps.ready3)
+        setSteps({
+          ...steps,
+          sign2: convert(signature),
+          ready3: true,
+        })
     }
-  }, [signature, isSuccessSign, isErrorSign])
+  }, [signature])
   useEffect(() => {
-    if (steps.tickets.length == 0) {
-      if (steps.ready2 && !steps.ready3 && !isErrorSign) {
-        autoSign()
-      } else if (steps.ready3 && steps.tx3.length === 0 && !isErrorTx) {
-        autoSign()
-      } else if (steps.ready3 && isReadyTx && !isErrorTx) {
-        sendTx()
-      } else if (isSuccessTx) {
+    if (isConnected && steps.tickets.length == 0) {
+      if (!isSuccessTx) {
+        if (steps.ready2 && !steps.ready3 && !isLoadingSign && !isErrorSign) {
+          submit()
+        } else if (steps.ready3 && !isReadyTx) {
+          submit()
+        } else if (steps.ready3 && isReadyTx && !isLoadingTx && !isErrorTx) {
+          sendTx()
+        }
+      } else {
         setSteps({
           ...steps,
           tickets: data.ticketSecrets.slice(0, data.nbTickets),
@@ -256,11 +250,11 @@ export default function Send() {
     }
   }, [steps, isReadyTx, isSuccessTx, isErrorTx])
   useEffect(() => {
+    if (isConnected && !contract) openSwitchNetworks()
+  }, [isConnected && chainId])
+  useEffect(() => {
     if (!isConnected) setOpen(true)
   }, [])
-  useEffect(() => {
-    if (!contract) openSwitchNetworks()
-  }, [chainId])
   return (
     <>
       <Title
@@ -282,7 +276,7 @@ export default function Send() {
         }
         loading={isLoading}
         ready={steps.ready1 && !isLoading && !isSuccessTx && !isErrorTx}
-        onClick={autoSign}
+        onClick={submit}
       />
       <div
         className={cn(
@@ -357,18 +351,18 @@ export default function Send() {
                     isRequired
                     name="amount"
                     size="sm"
-                    type="number"
-                    min={0}
-                    max={MAX}
+                    type="text"
                     placeholder="__"
-                    value={data.amount ? data.amount.toString() : ''}
+                    value={data.amount}
                     onChange={handleData}
                     classNames={inputClassNames}
                     startContent={
                       <button
                         className="text-xs text-amber-600 font-mono font-semibold tracking-widest cursor-pointer"
                         tabIndex={-1}
-                        onClick={() => setData({ ...data, amount: MAX })}
+                        onClick={() =>
+                          setData({ ...data, amount: MAX.string() })
+                        }
                       >
                         MAX
                       </button>
