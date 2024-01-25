@@ -1,23 +1,17 @@
-const generatePermitOrder = ({
+import { Address, Hex } from 'viem'
+
+const generateTicketPermit = ({
   chainId,
   contactAddr,
-  typehash,
   creator,
-  amount,
-  deadline,
-  streamed,
   orderId,
   orderSecret,
 }: {
   chainId: number
-  contactAddr: `0x${string}`
-  typehash: `0x${string}`
-  creator: `0x${string}`
-  amount: bigint
-  deadline: bigint
-  streamed: number
-  orderId: `0x${string}`
-  orderSecret: `0x${string}`
+  contactAddr: Address
+  creator: Address
+  orderId: Hex
+  orderSecret: Hex
 }): any => {
   return {
     account: creator,
@@ -27,34 +21,25 @@ const generatePermitOrder = ({
       chainId: chainId,
       verifyingContract: contactAddr,
     } as const,
-    primaryType: 'PermitOrder',
+    primaryType: 'TicketPermit',
     types: {
-      PermitOrder: [
-        { name: 'typehash', type: 'bytes32' },
+      TicketPermit: [
         { name: 'creator', type: 'address' },
-        { name: 'amount', type: 'uint256' },
-        { name: 'deadline', type: 'uint256' },
-        { name: 'streamed', type: 'uint8' },
         { name: 'orderId', type: 'bytes32' },
         { name: 'orderSecret', type: 'bytes32' },
       ],
     } as const,
     message: {
-      typehash: typehash,
       creator: creator,
-      amount: amount,
-      deadline: deadline,
-      streamed: streamed,
       orderId: orderId,
       orderSecret: orderSecret,
     } as const,
   }
 }
 
-const generatePermitGho = ({
+const generateGhoPermit = ({
   chainId,
   contactAddr,
-  typehash,
   owner,
   spender,
   value,
@@ -62,10 +47,9 @@ const generatePermitGho = ({
   deadline,
 }: {
   chainId: number
-  contactAddr: `0x${string}`
-  typehash: `0x${string}`
-  owner: `0x${string}`
-  spender: `0x${string}`
+  contactAddr: Address
+  owner: Address
+  spender: Address
   value: bigint
   nonce: bigint
   deadline: bigint
@@ -78,10 +62,9 @@ const generatePermitGho = ({
       chainId: chainId,
       verifyingContract: contactAddr,
     } as const,
-    primaryType: 'PermitGho',
+    primaryType: 'Permit',
     types: {
-      PermitGho: [
-        { name: 'typehash', type: 'bytes32' },
+      Permit: [
         { name: 'owner', type: 'address' },
         { name: 'spender', type: 'address' },
         { name: 'value', type: 'uint256' },
@@ -90,7 +73,6 @@ const generatePermitGho = ({
       ],
     } as const,
     message: {
-      typehash: typehash,
       owner: owner,
       spender: spender,
       value: value,
@@ -100,4 +82,4 @@ const generatePermitGho = ({
   }
 }
 
-export { generatePermitOrder, generatePermitGho }
+export { generateTicketPermit, generateGhoPermit }

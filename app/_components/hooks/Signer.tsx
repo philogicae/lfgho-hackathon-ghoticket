@@ -2,7 +2,7 @@
 import { useRef } from 'react'
 import { useSnackbar } from '@layout/Snackbar'
 import { useSignTypedData } from 'wagmi'
-import { hexToSignature, verifyTypedData } from 'viem'
+import { Hex, hexToSignature, verifyTypedData } from 'viem'
 
 export function useSigner() {
   const dataToSign = useRef<any>({})
@@ -45,7 +45,7 @@ export function useSigner() {
     })
     signTypedData({ ...dataToSign.current })
   }
-  const toSignature = (hex: `0x${string}`) => {
+  const toSignature = (hex: Hex) => {
     verifyTypedData({
       ...dataToSign.current,
       address: dataToSign.current.account,

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useSnackbar, useTrigger } from '@layout/Snackbar'
 import { ContractData } from '@contracts/loader'
 import {
@@ -28,7 +28,6 @@ const useTransact = ({
 }: TransactProps) => {
   const addSnackbar = useSnackbar()
   const { trigger, wait, done } = useTrigger()
-  const ready = useRef<boolean>(false)
   const {
     config,
     isError: isPrepareError,
@@ -37,9 +36,8 @@ const useTransact = ({
     ...contract,
     functionName: method,
     args: args,
-    enabled: ready.current,
+    enabled: args.length > 0,
     onError: () => {
-      ready.current = false
       addSnackbar({ type: 'error', text: 'Transaction error' })
     },
   })
@@ -60,7 +58,6 @@ const useTransact = ({
   } = useWaitForTransaction({
     hash: tx?.hash,
     onSuccess: () => {
-      ready.current = false
       done()
       addSnackbar({
         type: 'success',
@@ -69,7 +66,6 @@ const useTransact = ({
       onSuccess && onSuccess()
     },
     onError: () => {
-      ready.current = false
       done()
       addSnackbar({
         type: 'error',
@@ -92,14 +88,13 @@ const useTransact = ({
   }, [tx])
   return {
     sendTx: () => {
-      ready.current = true
-      writeAsync?.().catch(() => {
-        ready.current = false
+      writeAsync!().catch(() => {
         addSnackbar({ type: 'error', text: 'Transaction error' })
         onError && onError()
       })
     },
     tx: receipt ?? tx,
+    isReadyTx: !!writeAsync,
     isLoadingTx: isPreLoading || isPostLoading,
     isSuccessTx: isPostSuccess || isPreSuccess,
     isErrorTx: isPrepareError || isPostError || isPreError,

@@ -10,8 +10,10 @@ contract GhoTicket is Context, EIP712 {
   using PaginatedEnumerableSet for PaginatedEnumerableSet.Bytes32Set;
 
   uint256 public constant SAFETY_DELAY = 1 minutes;
-  bytes32 public constant PERMIT_TICKET_TYPEHASH =
-    keccak256('PermitTicket(Ticket memory ticket)');
+  bytes32 public constant TICKET_PERMIT_TYPEHASH =
+    keccak256(
+      'TicketPermit(address creator,bytes32 orderId,bytes32 orderSecret)'
+    );
   ERC20Permit public constant GHO =
     ERC20Permit(0xc4bF5CbDaBE595361438F8c6a187bDc330539c60);
 
@@ -265,11 +267,8 @@ contract GhoTicket is Context, EIP712 {
       _hashTypedDataV4(
         keccak256(
           abi.encode(
-            PERMIT_TICKET_TYPEHASH,
+            TICKET_PERMIT_TYPEHASH,
             order.creator,
-            order.amount,
-            order.deadline,
-            order.streamed,
             ticket.orderId,
             ticket.orderSecret
           )

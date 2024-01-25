@@ -4,7 +4,7 @@ import { cn } from '@utils/tw'
 import { useModal } from 'connectkit'
 import { useChainId, useAccount, useContractReads } from 'wagmi'
 import load from '@contracts/loader'
-import { generatePermitOrder, generatePermitGho } from '@utils/permits'
+import { generateTicketPermit, generateGhoPermit } from '@utils/permits'
 import { useSigner } from '@components/hooks/Signer'
 import { useTransact } from '@components/hooks/Transact'
 import WrongChain from '@components/elements/WrongChain'
@@ -20,7 +20,7 @@ import {
   FaRegCircleXmark,
 } from 'react-icons/fa6'
 import { Input, Switch } from '@nextui-org/react'
-import { keccak256, toHex, encodePacked, Signature } from 'viem'
+import { keccak256, toHex, encodePacked, Hex, Signature } from 'viem'
 import { nanoid } from 'nanoid'
 
 const inputClassNames = {
@@ -39,11 +39,11 @@ const switchClassNames = {
   label: 'text-white ml-1 truncate',
 }
 
-const generateSecrets = (): `0x${string}`[] =>
-  Array.from({ length: 11 }, () => keccak256(toHex(nanoid(32))))
+const generateHex = (): Hex => keccak256(toHex(nanoid(32)))
+
+const generateBatchHex = (): Hex[] => Array.from({ length: 10 }, generateHex)
 
 export default function Send() {
-  const secrets = useRef<`0x${string}`[]>(generateSecrets())
   const { setOpen, openSwitchNetworks } = useModal()
   const { isConnected, address } = useAccount()
   const chainId = useChainId()
@@ -56,7 +56,7 @@ export default function Send() {
     sign2: {} as Signature,
     ready3: false,
     tx3: [] as any,
-    results: [] as `0x${string}`[],
+    tickets: [] as Hex[],
   })
   const signatureDeadline = useRef<bigint>(BigInt(0))
   const {
@@ -67,12 +67,13 @@ export default function Send() {
     isErrorSign,
     convert,
   } = useSigner()
-  const { sendTx, isLoadingTx, isSuccessTx, isErrorTx, errorTx } = useTransact({
-    chainId,
-    contract,
-    method: 'createOrder',
-    args: steps.tx3,
-  })
+  const { sendTx, isReadyTx, isLoadingTx, isSuccessTx, isErrorTx, errorTx } =
+    useTransact({
+      chainId,
+      contract,
+      method: 'createOrder',
+      args: steps.tx3,
+    })
   const isLoading = isLoadingSign || isLoadingTx
   const { data: initReads } = useContractReads(
     isConnected
@@ -85,16 +86,8 @@ export default function Send() {
             },
             {
               ...gho,
-              functionName: 'PERMIT_TYPEHASH',
-            },
-            {
-              ...gho,
               functionName: 'nonces',
               args: [address!],
-            },
-            {
-              ...contract,
-              functionName: 'PERMIT_TICKET_TYPEHASH',
             },
             {
               ...contract,
@@ -106,17 +99,11 @@ export default function Send() {
         }
       : {}
   )
-  let MAX: any,
-    TYPEHASH_GHO: any,
-    NONCE_GHO: any,
-    TYPEHASH_GHOTICKET: any,
-    NONCE_GHOTICKET: any
+  let MAX: any, NONCE_GHO: bigint, NONCE_GHOTICKET: bigint
   if (initReads) {
     MAX = Number((initReads![0].result as bigint) / BigInt(10 ** 18))
-    TYPEHASH_GHO = initReads![1].result as `0x${string}`
-    NONCE_GHO = Number(initReads![2].result)
-    TYPEHASH_GHOTICKET = initReads![3].result as `0x${string}`
-    NONCE_GHOTICKET = Number(initReads![4].result)
+    NONCE_GHO = initReads![1].result as bigint
+    NONCE_GHOTICKET = initReads![2].result as bigint
   }
   const [hdm, setHdm] = useState({ hours: 0, days: 0, months: 0 })
   const [data, setData] = useState<{
@@ -124,15 +111,15 @@ export default function Send() {
     deadline: number
     stream: boolean
     nbTickets: number
-    orderSecret: `0x${string}`
-    ticketSecret: `0x${string}`[]
+    orderSecret: Hex
+    ticketSecrets: Hex[]
   }>({
     amount: 0,
     deadline: 0,
     stream: false,
     nbTickets: 0,
-    orderSecret: secrets.current.at(0)!,
-    ticketSecret: secrets.current.slice(1),
+    orderSecret: generateHex(),
+    ticketSecrets: generateBatchHex(),
   })
   const handleData = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.name != 'stream' && e.target.value === '0') {
@@ -180,21 +167,17 @@ export default function Send() {
   const autoSign = () => {
     if (steps.ready1 && !steps.ready2) {
       signRequest({
-        ...generatePermitOrder({
+        ...generateTicketPermit({
           chainId: chainId,
           contactAddr: contract!.address,
-          typehash: TYPEHASH_GHOTICKET,
           creator: address!,
-          amount: BigInt(data.amount) * BigInt(10 ** 18),
-          deadline: BigInt(Math.floor(data.deadline / 1000)),
-          streamed: Number(data.stream),
           orderId: keccak256(
             encodePacked(
               ['address', 'uint256'],
               [address!, BigInt(NONCE_GHOTICKET)]
             )
           ),
-          orderSecret: secrets.current.at(0)!,
+          orderSecret: data.orderSecret,
         }),
       })
     } else if (steps.ready2 && !steps.ready3) {
@@ -202,10 +185,9 @@ export default function Send() {
         Math.floor(new Date().getTime() / 1000 + 5 * 60)
       )
       signRequest({
-        ...generatePermitGho({
+        ...generateGhoPermit({
           chainId: chainId,
           contactAddr: gho!.address,
-          typehash: TYPEHASH_GHO,
           owner: address!,
           spender: contract!.address!,
           value: BigInt(data.amount) * BigInt(10 ** 18),
@@ -213,14 +195,14 @@ export default function Send() {
           deadline: signatureDeadline.current,
         }),
       })
-    } else if (steps.ready3 && steps.results.length === 0) {
+    } else if (steps.ready3 && steps.tickets.length === 0) {
       setSteps({
         ...steps,
         tx3: [
           BigInt(data.amount) * BigInt(10 ** 18),
           BigInt(Math.floor(data.deadline / 1000)),
           Number(data.stream),
-          secrets.current.slice(1),
+          data.ticketSecrets.slice(0, data.nbTickets),
           steps.sign2,
           signatureDeadline.current,
         ],
@@ -258,32 +240,23 @@ export default function Send() {
     }
   }, [signature, isSuccessSign, isErrorSign])
   useEffect(() => {
-    if (steps.results.length == 0) {
+    if (steps.tickets.length == 0) {
       if (steps.ready2 && !steps.ready3 && !isErrorSign) {
-        setTimeout(() => {
-          autoSign()
-        }, 1000)
+        autoSign()
       } else if (steps.ready3 && steps.tx3.length === 0 && !isErrorTx) {
-        setTimeout(() => {
-          autoSign()
-        }, 1000)
-      } else if (
-        steps.ready3 &&
-        steps.tx3.length > 0 &&
-        !isSuccessTx &&
-        !isErrorTx
-      ) {
+        autoSign()
+      } else if (steps.ready3 && isReadyTx && !isSuccessTx && !isErrorTx) {
         sendTx()
       } else if (isSuccessTx || isErrorTx) {
         if (isSuccessTx) {
           setSteps({
             ...steps,
-            results: secrets.current.slice(1),
+            tickets: data.ticketSecrets.slice(0, data.nbTickets),
           })
         }
       }
     }
-  }, [steps, isSuccessTx, isErrorTx])
+  }, [steps, isReadyTx, isSuccessTx, isErrorTx])
   useEffect(() => {
     if (!isConnected) setOpen(true)
   }, [])
@@ -362,7 +335,7 @@ export default function Send() {
                 <span
                   className={cn(
                     steps.ready3 &&
-                      steps.results.length === 0 &&
+                      steps.tickets.length === 0 &&
                       !isSuccessTx &&
                       !isErrorTx
                       ? 'animate-pulse text-orange-400 font-bold'
@@ -524,16 +497,21 @@ export default function Send() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-center justify-start h-full w-full text-xs break-words overflow-x-hidden">
+            <div className="flex flex-col items-center justify-center h-full w-full text-sm font-mono break-words overflow-x-hidden">
               {!errorTx ? (
-                steps.results.map((ticket, key) => (
+                steps.tickets.map((ticket, key) => (
                   <span key={key}>
-                    {ticket.slice(0, 15) + '...' + ticket.slice(-15)}
+                    {key +
+                      1 +
+                      ': ' +
+                      ticket.slice(0, 15) +
+                      '...' +
+                      ticket.slice(-15)}
                   </span>
                 ))
               ) : (
                 <div className="p-2 h-64 w-80 items-center justify-center text-xs break-words text-red-400">
-                  ERROR: {errorTx.message}
+                  ERROR: {errorTx?.message}
                 </div>
               )}
             </div>
