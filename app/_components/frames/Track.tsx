@@ -26,7 +26,7 @@ export default function Track() {
         label="Tracking"
         logo={<FaMagnifyingGlass className="transform -scale-x-100" />}
       />
-      <div className="flex flex-col w-full h-full border border-cyan-400 mt-2 items-center justify-start">
+      <div className="flex flex-col w-full h-full border border-cyan-400 mt-2 items-center justify-start rounded-xl">
         {!isConnected ? (
           <PleaseConnect />
         ) : !contract ? (

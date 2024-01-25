@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSnackbar, useTrigger } from '@layout/Snackbar'
 import { ContractData } from '@contracts/loader'
 import {
@@ -26,6 +26,7 @@ const useTransact = ({
   onSuccess,
   onError,
 }: TransactProps) => {
+  const id = useRef<number>(0)
   const addSnackbar = useSnackbar()
   const { trigger: preTrigger, wait: preWait, done: preDone } = useTrigger()
   const { trigger, wait, done } = useTrigger()
@@ -35,7 +36,10 @@ const useTransact = ({
     args: args,
     enabled: args.length > 0,
     onError: () => {
-      addSnackbar({ type: 'error', text: 'Transaction error' })
+      addSnackbar({
+        type: 'error',
+        text: (id.current ? `${id.current}. ` : '') + 'Tx error',
+      })
     },
   })
   const {
@@ -58,7 +62,7 @@ const useTransact = ({
       done()
       addSnackbar({
         type: 'success',
-        text: 'Transaction confirmed',
+        text: (id.current ? `${id.current}. ` : '') + 'Tx confirmed',
       })
       onSuccess && onSuccess()
     },
@@ -66,7 +70,7 @@ const useTransact = ({
       done()
       addSnackbar({
         type: 'error',
-        text: 'Transaction failed',
+        text: (id.current ? `${id.current}. ` : '') + 'Tx failed',
       })
       onError && onError()
     },
@@ -77,7 +81,7 @@ const useTransact = ({
       wait()
       addSnackbar({
         type: 'info',
-        text: 'Transaction submitted',
+        text: (id.current ? `${id.current}. ` : '') + 'Tx submitted',
         link: getBlockscan[chainId] + tx!.hash,
         chrono: true,
         trigger: trigger,
@@ -85,17 +89,21 @@ const useTransact = ({
     }
   }, [tx])
   return {
-    sendTx: () => {
+    sendTx: ({ index }: { index?: number }) => {
+      if (index) id.current = index
       preWait()
       addSnackbar({
         type: 'info',
-        text: 'Signing transaction...',
+        text: (id.current ? `${id.current}. ` : '') + 'Tx signing...',
         duration: 0,
         trigger: preTrigger,
       })
       writeAsync!().catch(() => {
         preDone()
-        addSnackbar({ type: 'warning', text: 'Transaction rejected' })
+        addSnackbar({
+          type: 'warning',
+          text: (id.current ? `${id.current}. ` : '') + 'Tx rejected',
+        })
         onError && onError()
       })
     },

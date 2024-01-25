@@ -98,9 +98,10 @@ export default function Send() {
               args: [address!],
             },
           ],
-          watch: false,
+          watch: true,
+          enabled: true,
         }
-      : {}
+      : { enabled: false }
   )
   let DECIMALS: number,
     MAX: any,
@@ -163,10 +164,12 @@ export default function Send() {
       setData({
         ...data,
         ['deadline']:
-          new Date().getTime() +
-          hdm.hours * 3600000 +
-          hdm.days * 86400000 +
-          hdm.months * 2592000000,
+          hdm.hours + hdm.days + hdm.months > 0
+            ? new Date().getTime() +
+              hdm.hours * 3600000 +
+              hdm.days * 86400000 +
+              hdm.months * 2592000000
+            : 0,
       })
   }, [hdm])
   const submit = () => {
@@ -176,20 +179,21 @@ export default function Send() {
         BigInt(10 ** (DECIMALS - PRECISION))
       bigAmount.current = tempAmount - (tempAmount % BigInt(data.nbTickets))
       signRequest({
-        ...generateTicketPermit({
+        args: generateTicketPermit({
           chainId: chainId,
           contactAddr: contract!.address,
           creator: address!,
           orderId: orderId,
           orderSecret: data.orderSecret,
         }),
+        index: 1,
       })
     } else if (steps.ready2 && !steps.ready3) {
       signatureDeadline.current = BigInt(
         Math.floor(new Date().getTime() / 1000 + 5 * 60)
       )
       signRequest({
-        ...generateGhoPermit({
+        args: generateGhoPermit({
           chainId: chainId,
           contactAddr: gho!.address,
           owner: address!,
@@ -198,6 +202,7 @@ export default function Send() {
           nonce: NONCE_GHO,
           deadline: signatureDeadline.current,
         }),
+        index: 2,
       })
     } else if (steps.ready3 && !isReadyTx) {
       setSteps({
@@ -212,7 +217,7 @@ export default function Send() {
         ],
       })
     } else if (steps.ready3 && isReadyTx && !steps.executed) {
-      sendTx()
+      sendTx({ index: 3 })
     }
   }
   useEffect(() => {
@@ -250,10 +255,16 @@ export default function Send() {
           submit()
         } else if (steps.ready3 && !isReadyTx) {
           submit()
-        } else if (steps.ready3 && isReadyTx && !isLoadingTx && !isErrorTx) {
+        } else if (
+          steps.ready3 &&
+          isReadyTx &&
+          !isLoadingTx &&
+          !isErrorTx &&
+          !steps.executed
+        ) {
           submit()
         }
-      } else {
+      } else if (!steps.executed) {
         setSteps({
           ...steps,
           executed: true,
@@ -278,19 +289,19 @@ export default function Send() {
             <FaCheck />
           ) : !steps.ready3 ? (
             <FaCheckDouble />
-          ) : !isSuccessTx ? (
+          ) : !steps.executed ? (
             <FaFileSignature className="ml-2" />
           ) : (
             <FaRegCircleCheck className="text-green-500 text-xl" />
           )
         }
         loading={isLoading}
-        ready={steps.ready1 && !isLoading && !isSuccessTx}
+        ready={steps.ready1 && !isLoading && !steps.executed}
         onClick={submit}
       />
       <div
         className={cn(
-          'flex flex-col h-full border border-cyan-400 mt-2 items-center justify-start overflow-hidden',
+          'flex flex-col h-full border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
           !isConnected || !contract ? 'w-full' : ''
         )}
       >

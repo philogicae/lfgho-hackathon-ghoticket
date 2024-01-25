@@ -9,6 +9,7 @@ import {
   FaCircleExclamation,
   FaCircleInfo,
   FaChevronRight,
+  FaLink,
 } from 'react-icons/fa6'
 
 const icons: { [key: string]: IconType } = {
@@ -67,7 +68,7 @@ export default function Notification({
       )}
     >
       <Icon className="w-4 h-4" />
-      <div className="w-full px-3">
+      <div className="w-full px-3 flex flex-row items-center">
         <span>{text}</span>
         {link && (
           <a
@@ -76,7 +77,7 @@ export default function Notification({
             target="_blank"
             rel="noopener noreferrer"
           >
-            link
+            <FaLink className="ml-1 w-5 h-5 text-cyan-300" />
           </a>
         )}
       </div>

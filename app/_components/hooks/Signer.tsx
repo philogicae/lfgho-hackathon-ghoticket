@@ -5,6 +5,7 @@ import { useSignTypedData } from 'wagmi'
 import { Hex, hexToSignature, verifyTypedData } from 'viem'
 
 export function useSigner() {
+  const id = useRef<number>(0)
   const dataToSign = useRef<any>({})
   const isValidSignature = useRef<boolean>(true)
   const addSnackbar = useSnackbar()
@@ -20,23 +21,24 @@ export function useSigner() {
       done()
       addSnackbar({
         type: 'success',
-        text: 'Signed successfully',
+        text: (id.current ? `${id.current}. ` : '') + 'Signed successfully',
       })
     },
     onError: () => {
       done()
       addSnackbar({
         type: 'warning',
-        text: 'Signature rejected',
+        text: (id.current ? `${id.current}. ` : '') + 'Signature rejected',
       })
     },
   })
-  const signRequest = ({ ...args }: any) => {
+  const signRequest = ({ args, index }: { args: any; index?: number }) => {
+    if (index) id.current = index
     dataToSign.current = args
     wait()
     addSnackbar({
       type: 'info',
-      text: 'Requesting signature...',
+      text: (id.current ? `${id.current}. ` : '') + 'Requesting signature...',
       duration: 0,
       trigger: trigger,
     })
@@ -53,7 +55,7 @@ export function useSigner() {
         done()
         addSnackbar({
           type: 'error',
-          text: 'Signature invalid',
+          text: (id.current ? `${id.current}. ` : '') + 'Signature invalid',
         })
       }
     })

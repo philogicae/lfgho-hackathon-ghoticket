@@ -61,10 +61,12 @@ export default function Welcome() {
   return (
     <div className="flex flex-col w-full h-full justify-between items-center overflow-hidden">
       <div className="flex flex-col text-lg font-sans w-96 h-1/3 items-center justify-center halo-text">
-        <div className="flex flex-row items-center justify-center">
-          <FaFileInvoiceDollar className="pr-3 pt-0.5 text-2xl" />
-          <span>Generate claimable tickets to send $GHO</span>
-          <FaFileInvoiceDollar className="pl-3 pt-0.5 text-2xl" />
+        <div className="flex flex-row items-center justify-center text-2xl">
+          <FaFileInvoiceDollar className="pr-3" />
+          <span className="text-lg">
+            Generate claimable tickets to send $GHO
+          </span>
+          <FaFileInvoiceDollar className="pl-3" />
         </div>
         <div className="flex flex-row items-center justify-center">
           <FaXmark className="pr-2 pt-0.5 text-2xl" />
