@@ -21,7 +21,7 @@ const url = !process.env.NEXT_PUBLIC_URL
 export const metadata: Metadata = {
   title: 'GhoTicket',
   description:
-    'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash. [LFGHO Hackathon 2024]',
+    'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash!',
   applicationName: 'GhoTicket',
   appLinks: {
     web: {
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'GhoTicket',
     description:
-      'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash. [LFGHO Hackathon 2024]',
+      'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash!',
     url: url,
     siteName: 'GhoTicket',
     images: [
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     card: 'summary',
     title: 'GhoTicket',
     description:
-      'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash. [LFGHO Hackathon 2024]',
+      'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash!',
     site: '@philogicae',
     creator: '@philogicae',
     images: [url + '/512x512.png'],

@@ -67,7 +67,7 @@ export default function Send() {
     isErrorSign,
     convert,
   } = useSigner()
-  const { sendTx, isReadyTx, isLoadingTx, isSuccessTx, isErrorTx, errorTx } =
+  const { sendTx, isReadyTx, isLoadingTx, isSuccessTx, isErrorTx } =
     useTransact({
       chainId,
       contract,
@@ -245,15 +245,13 @@ export default function Send() {
         autoSign()
       } else if (steps.ready3 && steps.tx3.length === 0 && !isErrorTx) {
         autoSign()
-      } else if (steps.ready3 && isReadyTx && !isSuccessTx && !isErrorTx) {
+      } else if (steps.ready3 && isReadyTx && !isErrorTx) {
         sendTx()
-      } else if (isSuccessTx || isErrorTx) {
-        if (isSuccessTx) {
-          setSteps({
-            ...steps,
-            tickets: data.ticketSecrets.slice(0, data.nbTickets),
-          })
-        }
+      } else if (isSuccessTx) {
+        setSteps({
+          ...steps,
+          tickets: data.ticketSecrets.slice(0, data.nbTickets),
+        })
       }
     }
   }, [steps, isReadyTx, isSuccessTx, isErrorTx])
@@ -498,22 +496,16 @@ export default function Send() {
               </div>
             </div>
             <div className="flex flex-col items-center justify-center h-full w-full text-sm font-mono break-words overflow-x-hidden">
-              {!errorTx ? (
-                steps.tickets.map((ticket, key) => (
-                  <span key={key}>
-                    {key +
-                      1 +
-                      ': ' +
-                      ticket.slice(0, 15) +
-                      '...' +
-                      ticket.slice(-15)}
-                  </span>
-                ))
-              ) : (
-                <div className="p-2 h-64 w-80 items-center justify-center text-xs break-words text-red-400">
-                  ERROR: {errorTx?.message}
-                </div>
-              )}
+              {steps.tickets.map((ticket, key) => (
+                <span key={key}>
+                  {key +
+                    1 +
+                    ': ' +
+                    ticket.slice(0, 15) +
+                    '...' +
+                    ticket.slice(-15)}
+                </span>
+              ))}
             </div>
           </>
         )}

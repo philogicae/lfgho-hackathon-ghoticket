@@ -24,7 +24,7 @@ const config = createConfig(
     chains: [sepolia, mainnet],
     appName: 'GhoTicket',
     appDescription:
-      'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash. [LFGHO Hackathon 2024]',
+      'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash!',
     appUrl: url,
     appIcon: url + '/512x512.png',
   })
