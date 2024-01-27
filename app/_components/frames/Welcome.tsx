@@ -60,13 +60,11 @@ export default function Welcome() {
   const arrowStyle = 'animate-pulse text-2xl text-cyan-400'
   return (
     <div className="flex flex-col w-full h-full justify-between items-center overflow-hidden">
-      <div className="flex flex-col text-lg font-sans w-96 h-1/3 items-center justify-center halo-text">
-        <div className="flex flex-row items-center justify-center text-2xl">
-          <FaFileInvoiceDollar className="pr-3" />
-          <span className="text-lg">
-            Create claimable tickets to send ERC20 tokens
-          </span>
-          <FaFileInvoiceDollar className="pl-3" />
+      <div className="flex flex-col text-base font-sans w-96 h-1/3 items-center justify-center halo-text">
+        <div className="flex flex-row items-center justify-center">
+          <FaFileInvoiceDollar className="pr-3 text-2xl" />
+          <span>Create claimable tickets to send ERC20 tokens</span>
+          <FaFileInvoiceDollar className="pl-3 text-2xl" />
         </div>
         <div className="flex flex-row items-center justify-center">
           <FaXmark className="pr-2 pt-0.5 text-2xl" />
@@ -78,7 +76,7 @@ export default function Welcome() {
           <span>Simple as using cash</span>
           <FaHandHoldingDollar className="pl-3 pt-0.5 text-3xl" />
         </div>
-        <div className="flex flex-row items-center justify-center pt-1 animate-pulse text-cyan-200 font-mono text-lg font-thin">
+        <div className="flex flex-row items-center justify-center pt-1 animate-pulse text-cyan-200 font-mono font-thin">
           <FaArrowTurnDown className="pl-0 pt-3 text-3xl transform -scale-x-100" />
           <span className="font-mono">START NOW</span>
           <FaArrowTurnDown className="pl-0 pt-3 text-3xl" />

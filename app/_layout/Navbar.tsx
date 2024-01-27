@@ -26,9 +26,9 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
               loading="eager"
               disableSkeleton={true}
             />
-            <span className="text-4xl font-sans pl-1.5 halo-text">QR</span>
+            <span className="text-4xl font-sans halo-text">QR</span>
             <FaQrcode className="text-3xl px-1.5" />
-            <span className="text-4xl font-sans pr-5 sm:pr-0 halo-text">
+            <span className="text-4xl font-sans pr-9 sm:pr-0 halo-text">
               Flow
             </span>
           </a>
