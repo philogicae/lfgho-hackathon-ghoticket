@@ -314,7 +314,7 @@ export default function Send() {
       />
       <div
         className={cn(
-          'flex flex-col h-full min-w-[360px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
+          'flex flex-col h-full min-w-[320px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
           !isConnected || !contract ? 'w-full' : ''
         )}
       >
