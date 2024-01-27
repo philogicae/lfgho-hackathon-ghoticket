@@ -1,11 +1,11 @@
 {
-  "short_name": "GhoTicket",
-  "name": "GhoTicket",
-  "description": "Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash!",
+  "short_name": "QR Flow",
+  "name": "QR Flow",
+  "description": "Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!",
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#ffffff",
-  "background_color": "#000000",
+  "background_color": "#050011",
   "icons": [
     {
       "src": "favicon.ico",

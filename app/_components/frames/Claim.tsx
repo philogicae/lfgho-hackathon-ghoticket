@@ -24,7 +24,7 @@ export default function Claim() {
   const { isConnected } = useAccount()
   const { setOpen, openSwitchNetworks } = useModal()
   const selectedChainId = useChainId()
-  const contract = load('GhoTicket', chainId)
+  const contract = load('QRFlow', chainId)
   //const [isLoading, setIsLoading] = useState(false)
   const decodeTicket = async (ticketHash: string) => {
     const decoded = await extractFromTicketHash(ticketHash)

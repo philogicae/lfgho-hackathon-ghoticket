@@ -12,11 +12,11 @@ import { FaMagnifyingGlass, FaWandMagicSparkles } from 'react-icons/fa6'
 import { useParams } from 'react-router-dom'
 
 export default function Track() {
-  const { data } = useParams()
+  const { addr } = useParams()
   const { isConnected, address } = useAccount()
   const { setOpen, openSwitchNetworks } = useModal()
   const chainId = useChainId()
-  const contract = load('GhoTicket', chainId)
+  const contract = load('QRFlow', chainId)
   //const [isLoading, setIsLoading] = useState(false)
   useEffect(() => {
     if (isConnected && !contract) openSwitchNetworks()

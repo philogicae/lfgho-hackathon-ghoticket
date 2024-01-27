@@ -5,32 +5,34 @@ import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import { sepolia, mainnet } from 'wagmi/chains'
 import Loading from '@components/frames/Loading'
 
-const url = !process.env.NEXT_PUBLIC_URL
-  ? 'https://ghoticket.on-fleek.app'
-  : process.env.NEXT_PUBLIC_URL
+const url = 'https://qrflow.xyz'
 if (!process.env.NEXT_PUBLIC_WALLETCONNECT_ID) {
   throw new Error(
     'You need to provide NEXT_PUBLIC_WALLETCONNECT_ID env variable'
   )
 }
-if (!process.env.NEXT_PUBLIC_INFURA_ID) {
+/* if (!process.env.NEXT_PUBLIC_INFURA_ID) {
   throw new Error('You need to provide NEXT_PUBLIC_INFURA_ID env variable')
-}
+} */
 
 const config = createConfig(
   getDefaultConfig({
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_ID,
-    infuraId: process.env.NEXT_PUBLIC_INFURA_ID,
+    //infuraId: process.env.NEXT_PUBLIC_INFURA_ID,
     chains: [sepolia, mainnet],
-    appName: 'GhoTicket',
+    appName: 'QR Flow',
     appDescription:
-      'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash!',
+      'Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!',
     appUrl: url,
     appIcon: url + '/512x512.png',
   })
 )
 
-export default function Web3Modal({ children }: { children: React.ReactNode }) {
+export default function ConnectKit({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const [isReady, setReady] = useState(false)
   useEffect(() => {
     setReady(true)
@@ -43,7 +45,7 @@ export default function Web3Modal({ children }: { children: React.ReactNode }) {
           embedGoogleFonts: true,
           disclaimer: (
             <span className="text-cyan-400 !font-mono tracking-tight">
-              GhoTicket is an experimental project
+              QR Flow is an experimental project
             </span>
           ),
         }}

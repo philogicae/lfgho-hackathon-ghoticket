@@ -6,7 +6,7 @@ import {Context} from '@openzeppelin/contracts/utils/Context.sol';
 import {ERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol';
 import {EIP712} from '@openzeppelin/contracts/utils/cryptography/EIP712.sol';
 
-contract GhoTicket is Context, EIP712 {
+contract QRFlow is Context, EIP712 {
   using PaginatedEnumerableSet for PaginatedEnumerableSet.Bytes32Set;
 
   uint256 public constant SAFETY_DELAY = 1 minutes;
@@ -108,7 +108,7 @@ contract GhoTicket is Context, EIP712 {
   error TicketExpired(bytes32 orderId, bytes32 ticketId, uint256 deadline);
   error InvalidSigner(address creator, address signer);
 
-  constructor() EIP712('GhoTicket', '1') {}
+  constructor() EIP712('QR Flow', '1') {}
 
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparatorV4();

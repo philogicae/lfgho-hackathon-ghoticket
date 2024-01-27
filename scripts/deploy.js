@@ -41,7 +41,7 @@ async function Deployer(contractName, ...args) {
 }
 
 async function main() {
-  await Deployer('GhoTicket')
+  await Deployer('QRFlow')
 }
 
 main().catch((error) => {

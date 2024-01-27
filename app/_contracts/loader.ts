@@ -1,6 +1,6 @@
 import { Abi } from 'viem'
 import registry from './registry.json'
-import GhoTicket from './abis/GhoTicket.json'
+import QRFlow from './abis/QRFlow.json'
 import Gho from './abis/Gho.json'
 
 const reg: {
@@ -12,7 +12,7 @@ const reg: {
 const abis: {
   [contract: string]: Abi
 } = {
-  GhoTicket: GhoTicket.abi as Abi,
+  QRFlow: QRFlow.abi as Abi,
   Gho: Gho.abi as Abi,
 }
 

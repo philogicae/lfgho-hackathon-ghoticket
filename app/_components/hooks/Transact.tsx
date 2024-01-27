@@ -7,7 +7,7 @@ import {
   useContractWrite,
   useWaitForTransaction,
 } from 'wagmi'
-import { getBlockscan } from '@utils/chains'
+import { useChains } from 'connectkit'
 
 type TransactProps = {
   chainId: number
@@ -26,6 +26,9 @@ const useTransact = ({
   onSuccess,
   onError,
 }: TransactProps) => {
+  const chains = useChains()
+  const blockExplorer = chains.find((chain) => chain.id === chainId)
+    ?.blockExplorers.default.url
   const id = useRef<number>(0)
   const executed = useRef<boolean>(false)
   const addSnackbar = useSnackbar()
@@ -87,7 +90,7 @@ const useTransact = ({
       addSnackbar({
         type: 'info',
         text: (id.current ? `${id.current}. ` : '') + 'Tx submitted',
-        link: getBlockscan[chainId] + tx!.hash,
+        link: blockExplorer + '/tx/' + tx!.hash,
         chrono: true,
         trigger: trigger,
       })

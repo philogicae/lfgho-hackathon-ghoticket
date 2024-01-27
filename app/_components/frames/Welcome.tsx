@@ -64,7 +64,7 @@ export default function Welcome() {
         <div className="flex flex-row items-center justify-center text-2xl">
           <FaFileInvoiceDollar className="pr-3" />
           <span className="text-lg">
-            Generate claimable tickets to send $GHO
+            Create claimable tickets to send ERC20 tokens
           </span>
           <FaFileInvoiceDollar className="pl-3" />
         </div>

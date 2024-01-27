@@ -1,16 +1,20 @@
-# LFGHO Hackathon Project 2024 - GhoTicket
+# QR Flow (ex-GhoTicket)
 
-Decentralized Main Deployment: https://ghoticket.on-fleek.app
+LFGHO Hackathon Project 2024
 
-Centralized Backup Deployment: https://ghoticket.vercel.app
+## Deployments
+
+- Centralized Main: https://qrflow.xyz
+- Decentralized Main: https://qrflow.on-fleek.app
+- Decentralized Legacy: https://ghoticket.on-fleek.app
 
 ## Main Idea
 
-Generate claimable tickets to send $GHO without specifying any wallet address. Simple as using cash.
+Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!
 
 ## Description
 
-Inspired by cash, which sidesteps the concept of a predefined recipient, GhoTicket is a protocol that lets you send GHO in the form of claimable tickets, without the need to specify target wallet addresses.
+Inspired by cash, which sidesteps the concept of a predefined recipient, QR Flow is a protocol that lets you send crypto in the form of claimable tickets, without the need to specify target wallet addresses.
 
 The sender needs no information about the recipient(s) to prepare tickets, and can simply share them as a private link or by generating a QR code. This can be useful for sending funds to someone who doesn't have a wallet yet, or doesn't know their own address, or as a reward for giveaways. To create tickets, the sender must choose the transfer mode (instant or stream) and the number of tickets, which are generated and signed off-chain. After depositing the funds (1 tx), tickets can be transmitted.
 

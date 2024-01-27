@@ -8,6 +8,6 @@ export default function Custom404() {
   useEffect(() => {
     if (!(window.location.pathname + window.location.hash).startsWith('/#/'))
       router.replace('/#/404')
-  })
+  }, [])
   return <Error />
 }

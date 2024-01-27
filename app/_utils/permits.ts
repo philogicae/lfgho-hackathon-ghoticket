@@ -16,7 +16,7 @@ const generateTicketPermit = ({
   return {
     account: creator,
     domain: {
-      name: 'GhoTicket',
+      name: 'QR Flow',
       version: '1',
       chainId: chainId,
       verifyingContract: contactAddr,

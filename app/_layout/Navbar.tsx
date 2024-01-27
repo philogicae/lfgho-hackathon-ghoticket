@@ -1,7 +1,7 @@
 'use client'
 import { Image } from '@nextui-org/react'
 import { ConnectKitButton } from 'connectkit'
-import { FaEthereum, FaXTwitter, FaGithub } from 'react-icons/fa6'
+import { FaEthereum, FaXTwitter, FaGithub, FaQrcode } from 'react-icons/fa6'
 
 export default function Navbar({ children }: { children: React.ReactNode }) {
   return (
@@ -20,14 +20,16 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
           >
             <Image
               src="/512x512.png"
-              alt="GhoTicket"
+              alt="QR Flow"
               width={100}
               height={100}
               loading="eager"
               disableSkeleton={true}
             />
-            <span className="text-4xl font-mono pl-1.5 pr-5 sm:pr-0 halo-text">
-              GhoTicket
+            <span className="text-4xl font-sans pl-1.5 halo-text">QR</span>
+            <FaQrcode className="text-3xl px-1.5" />
+            <span className="text-4xl font-sans pr-5 sm:pr-0 halo-text">
+              Flow
             </span>
           </a>
           <div className="sm:pr-4">

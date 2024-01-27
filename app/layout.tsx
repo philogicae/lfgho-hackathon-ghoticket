@@ -6,6 +6,8 @@ import NextUI from '@layout/NextUI'
 import Navbar from '@layout/Navbar'
 import Snackbar from '@layout/Snackbar'
 import Background from '@layout/Background'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const font = Roboto({
   subsets: ['latin'],
@@ -14,15 +16,13 @@ const font = Roboto({
   preload: true,
 })
 
-const url = !process.env.NEXT_PUBLIC_URL
-  ? 'https://ghoticket.on-fleek.app'
-  : process.env.NEXT_PUBLIC_URL
+const url = 'https://qrflow.xyz'
 
 export const metadata: Metadata = {
-  title: 'GhoTicket',
+  title: 'QR Flow',
   description:
-    'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash!',
-  applicationName: 'GhoTicket',
+    'Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!',
+  applicationName: 'QR Flow',
   appLinks: {
     web: {
       url: url,
@@ -37,11 +37,11 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   metadataBase: new URL(url),
   openGraph: {
-    title: 'GhoTicket',
+    title: 'QR Flow',
     description:
-      'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash!',
+      'Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!',
     url: url,
-    siteName: 'GhoTicket',
+    siteName: 'QR Flow',
     images: [
       {
         url: url + '/512x512.png',
@@ -54,9 +54,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary',
-    title: 'GhoTicket',
+    title: 'QR Flow',
     description:
-      'Generate claimable tickets to send GHO without specifying any wallet address. Simple as using cash!',
+      'Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!',
     site: '@philogicae',
     creator: '@philogicae',
     images: [url + '/512x512.png'],
@@ -82,7 +82,7 @@ export default function RootLayout({
       window.location.reload()
     }
   }
-  const csp = `default-src 'self' api.web3modal.com *.walletconnect.com *.walletconnect.org wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org/rpc *.infura.io; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' * blob: data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'`
+  const csp = `default-src 'self' api.web3modal.com *.walletconnect.com *.walletconnect.org wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org/rpc *.infura.io rpc.sepolia.org cloudflare-eth.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' * blob: data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'`
   return (
     <html lang="en" className={font.variable}>
       <head>
@@ -97,6 +97,8 @@ export default function RootLayout({
             </Navbar>
           </NextUI>
         </ConnectKit>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

@@ -52,7 +52,7 @@ export default function Send() {
   const { setOpen, openSwitchNetworks } = useModal()
   const chainId = useChainId()
   const gho = load('Gho', chainId)
-  const contract = load('GhoTicket', chainId)
+  const contract = load('QRFlow', chainId)
   const [steps, setSteps] = useState({
     ready1: false,
     sign1: '' as Hex,
@@ -110,7 +110,7 @@ export default function Send() {
   let DECIMALS: number,
     MAX: any,
     NONCE_GHO: bigint,
-    NONCE_GHOTICKET: bigint,
+    NONCE_QRFLOW: bigint,
     orderId: Hex
   if (initReads) {
     DECIMALS = initReads![0].result as number
@@ -120,9 +120,9 @@ export default function Send() {
       ) /
       10 ** PRECISION
     NONCE_GHO = initReads![2].result as bigint
-    NONCE_GHOTICKET = initReads![3].result as bigint
+    NONCE_QRFLOW = initReads![3].result as bigint
     orderId = keccak256(
-      encodePacked(['address', 'uint256'], [address!, NONCE_GHOTICKET])
+      encodePacked(['address', 'uint256'], [address!, NONCE_QRFLOW])
     )
   }
   const [hdm, setHdm] = useState({ hours: 0, days: 0, months: 0 })
@@ -552,7 +552,7 @@ export default function Send() {
                     codeString={
                       window.location.origin +
                       '/#/claim/' +
-                      steps.tickets.at(currentTicket)
+                      steps.tickets.at(currentTicket - 1)
                     }
                     classNames={{
                       base: 'pl-3 pr-1 py-0 border-small border-amber-500',
@@ -564,7 +564,7 @@ export default function Send() {
                       href={
                         window.location.origin +
                         '/#/claim/' +
-                        steps.tickets.at(currentTicket)
+                        steps.tickets.at(currentTicket - 1)
                       }
                     >
                       {` ${data.amount / data.nbTickets} $GHO`}
