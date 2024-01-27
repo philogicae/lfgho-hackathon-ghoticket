@@ -17,10 +17,12 @@ import {
   FaCheckDouble,
   FaFileSignature,
   FaRegCircleCheck,
+  FaPrint,
 } from 'react-icons/fa6'
-import { Input, Switch } from '@nextui-org/react'
+import { Input, Switch, Snippet, Pagination } from '@nextui-org/react'
 import { keccak256, toHex, encodePacked, Hex, Signature } from 'viem'
 import { nanoid } from 'nanoid'
+import { generateBatchTicketHash } from '@utils/packing'
 
 const inputClassNames = {
   base: 'p-0.5 rounded',
@@ -53,16 +55,18 @@ export default function Send() {
   const contract = load('GhoTicket', chainId)
   const [steps, setSteps] = useState({
     ready1: false,
-    sign1: {} as Signature,
+    sign1: '' as Hex,
     ready2: false,
     sign2: {} as Signature,
     ready3: false,
     tx3: [] as any,
     executed: false,
+    tickets: [] as string[],
   })
   const orderSecret = useRef<Hex>(generateHex())
   const ticketSecrets = useRef<Hex[]>(generateBatchHex())
   const bigAmount = useRef<bigint>(BigInt(0))
+  const [currentTicket, setCurrentTicket] = useState(1)
   const signatureDeadline = useRef<bigint>(BigInt(0))
   const { signRequest, signature, isLoadingSign, isErrorSign, convert } =
     useSigner()
@@ -237,7 +241,7 @@ export default function Send() {
       if (!steps.ready2)
         setSteps({
           ...steps,
-          sign1: convert(signature),
+          sign1: signature,
           ready2: true,
         })
       else if (!steps.ready3)
@@ -265,10 +269,19 @@ export default function Send() {
           submit()
         }
       } else if (!steps.executed) {
-        setSteps({
-          ...steps,
-          executed: true,
-        })
+        const done = async () =>
+          await setSteps({
+            ...steps,
+            executed: true,
+            tickets: await generateBatchTicketHash(
+              chainId,
+              orderId,
+              orderSecret.current,
+              ticketSecrets.current.slice(0, data.nbTickets),
+              steps.sign1
+            ),
+          })
+        done()
       }
     }
   }, [steps, isReadyTx, isSuccessTx, isErrorTx])
@@ -301,7 +314,7 @@ export default function Send() {
       />
       <div
         className={cn(
-          'flex flex-col h-full border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
+          'flex flex-col h-full min-w-[360px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
           !isConnected || !contract ? 'w-full' : ''
         )}
       >
@@ -506,20 +519,60 @@ export default function Send() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-center justify-center h-full w-full text-sm font-mono break-words overflow-x-hidden">
-              {steps.executed &&
-                data.ticketIds
-                  .slice(0, data.nbTickets)
-                  .map((ticketId, key) => (
-                    <span key={key}>
-                      {key +
-                        1 +
-                        ': ' +
-                        ticketId.slice(0, 15) +
-                        '...' +
-                        ticketId.slice(-15)}
-                    </span>
-                  ))}
+            <div className="flex flex-col items-center justify-between h-full w-full text-sm p-2 font-mono break-words overflow-hidden">
+              {!steps.executed ? (
+                <>
+                  <br />
+                  <FaPrint className="text-6xl" />
+                  <span className="text-xl font-bold w-48 text-center">
+                    Print your batch of tickets
+                  </span>
+                  <span className="text-xs text-center w-64 text-red-500">
+                    After creation, tickets will be only available until you
+                    leave the page. We don&apos;t keep any data, so don&apos;t
+                    forget to share or at least to save your links.
+                  </span>
+                  <br />
+                </>
+              ) : (
+                <>
+                  <br />
+                  <Pagination
+                    loop
+                    showControls
+                    size="sm"
+                    color="success"
+                    total={data.nbTickets}
+                    page={currentTicket}
+                    onChange={setCurrentTicket}
+                  />
+                  <Snippet
+                    symbol={`#${currentTicket < 10 ? '0' : ''}${currentTicket}`}
+                    variant="bordered"
+                    codeString={
+                      window.location.origin +
+                      '/#/claim/' +
+                      steps.tickets.at(currentTicket)
+                    }
+                    classNames={{
+                      base: 'pl-3 pr-1 py-0 border-small border-amber-500',
+                      symbol: 'text-cyan-400',
+                      copyButton: 'text-white',
+                    }}
+                  >
+                    <a
+                      href={
+                        window.location.origin +
+                        '/#/claim/' +
+                        steps.tickets.at(currentTicket)
+                      }
+                    >
+                      {` ${data.amount / data.nbTickets} $GHO`}
+                    </a>
+                  </Snippet>
+                  <br />
+                </>
+              )}
             </div>
           </>
         )}

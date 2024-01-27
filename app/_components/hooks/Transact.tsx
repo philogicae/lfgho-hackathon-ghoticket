@@ -27,6 +27,7 @@ const useTransact = ({
   onError,
 }: TransactProps) => {
   const id = useRef<number>(0)
+  const executed = useRef<boolean>(false)
   const addSnackbar = useSnackbar()
   const { trigger: preTrigger, wait: preWait, done: preDone } = useTrigger()
   const { trigger, wait, done } = useTrigger()
@@ -34,7 +35,7 @@ const useTransact = ({
     ...contract,
     functionName: method,
     args: args,
-    enabled: args.length > 0,
+    enabled: args.length > 0 && !executed.current,
     onError: () => {
       addSnackbar({
         type: 'error',
@@ -59,12 +60,15 @@ const useTransact = ({
   } = useWaitForTransaction({
     hash: tx?.hash,
     onSuccess: () => {
-      done()
-      addSnackbar({
-        type: 'success',
-        text: (id.current ? `${id.current}. ` : '') + 'Tx confirmed',
-      })
-      onSuccess && onSuccess()
+      if (!executed.current) {
+        executed.current = true
+        done()
+        addSnackbar({
+          type: 'success',
+          text: (id.current ? `${id.current}. ` : '') + 'Tx confirmed',
+        })
+        onSuccess && onSuccess()
+      }
     },
     onError: () => {
       done()
@@ -74,6 +78,7 @@ const useTransact = ({
       })
       onError && onError()
     },
+    enabled: args.length > 0 && !executed.current,
   })
   useEffect(() => {
     if (tx?.hash) {
