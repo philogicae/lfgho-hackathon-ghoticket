@@ -19,10 +19,22 @@ import {
   FaRegCircleCheck,
   FaPrint,
 } from 'react-icons/fa6'
-import { Input, Switch, Snippet, Pagination } from '@nextui-org/react'
+import {
+  Input,
+  Switch,
+  Snippet,
+  Pagination,
+  Modal,
+  ModalContent,
+  ModalBody,
+  ModalHeader,
+  useDisclosure,
+  Button,
+} from '@nextui-org/react'
 import { keccak256, toHex, encodePacked, Hex, Signature } from 'viem'
 import { nanoid } from 'nanoid'
 import { generateBatchTicketHash } from '@utils/packing'
+import QrSvg from '@wojtekmaj/react-qr-svg'
 
 const inputClassNames = {
   base: 'p-0.5 rounded',
@@ -50,6 +62,7 @@ const generateTicketIds = (orderSecret: Hex, ticketSecrets: Hex[]): Hex[] =>
 export default function Send() {
   const { isConnected, address } = useAccount()
   const { setOpen, openSwitchNetworks } = useModal()
+  const { isOpen, onOpen, onClose } = useDisclosure()
   const chainId = useChainId()
   const gho = load('Gho', chainId)
   const contract = load('QRFlow', chainId)
@@ -519,12 +532,11 @@ export default function Send() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-center justify-between h-full w-full text-sm p-2 font-mono break-words overflow-hidden">
+            <div className="flex flex-col items-center justify-center h-full w-full text-sm p-2 font-mono break-words overflow-hidden">
               {!steps.executed ? (
                 <>
-                  <br />
-                  <FaPrint className="text-6xl" />
-                  <span className="text-xl font-bold w-48 text-center">
+                  <FaPrint className="text-6xl mb-4" />
+                  <span className="text-xl font-bold w-48 text-center mb-4">
                     Print your batch of tickets
                   </span>
                   <span className="text-xs text-center w-64 text-red-500">
@@ -532,46 +544,90 @@ export default function Send() {
                     leave the page. We don&apos;t keep any data, so don&apos;t
                     forget to share or at least to save your links.
                   </span>
-                  <br />
                 </>
               ) : (
-                <>
-                  <br />
+                <div className="w-full h-full flex flex-col items-center justify-between">
                   <Pagination
                     loop
                     showControls
+                    variant="faded"
                     size="sm"
                     color="success"
                     total={data.nbTickets}
                     page={currentTicket}
                     onChange={setCurrentTicket}
                   />
-                  <Snippet
-                    symbol={`#${currentTicket < 10 ? '0' : ''}${currentTicket}`}
-                    variant="bordered"
-                    codeString={
-                      window.location.origin +
-                      '/#/claim/' +
-                      steps.tickets.at(currentTicket - 1)
-                    }
-                    classNames={{
-                      base: 'pl-3 pr-1 py-0 border-small border-amber-500',
-                      symbol: 'text-cyan-400',
-                      copyButton: 'text-white',
-                    }}
-                  >
-                    <a
-                      href={
+
+                  <Button variant="ghost" color="success" onPress={onOpen}>
+                    Open QR Code
+                  </Button>
+                  <Modal isOpen={isOpen} onClose={onClose} placement="center">
+                    <ModalContent>
+                      {() => (
+                        <>
+                          <ModalHeader className="flex flex-col gap-1 text-cyan-300">
+                            {`#${currentTicket < 10 ? '0' : ''}${currentTicket}`}
+                          </ModalHeader>
+                          <ModalBody>
+                            <QrSvg
+                              value={
+                                window.location.origin +
+                                '/#/claim/' +
+                                steps.tickets.at(currentTicket - 1)
+                              }
+                              level="L"
+                              margin={1}
+                            />
+                          </ModalBody>
+                        </>
+                      )}
+                    </ModalContent>
+                  </Modal>
+                  <div className="flex flex-row w-full items-center justify-between">
+                    <Snippet
+                      symbol={`#${currentTicket < 10 ? '0' : ''}${currentTicket}`}
+                      variant="bordered"
+                      codeString={
                         window.location.origin +
                         '/#/claim/' +
                         steps.tickets.at(currentTicket - 1)
                       }
+                      classNames={{
+                        base: 'w-52 pl-2 pr-1 py-0 border-small border-amber-500',
+                        symbol: 'text-cyan-400',
+                        copyButton: 'text-cyan-400 pb-0.5',
+                      }}
                     >
-                      {` ${data.amount / data.nbTickets} $GHO`}
-                    </a>
-                  </Snippet>
-                  <br />
-                </>
+                      <a
+                        href={
+                          window.location.origin +
+                          '/#/claim/' +
+                          steps.tickets.at(currentTicket - 1)
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pl-1"
+                      >
+                        {`$GHO: ${data.amount / data.nbTickets}`}
+                      </a>
+                    </Snippet>
+                    <Snippet
+                      symbol="ALL"
+                      variant="bordered"
+                      codeString={steps.tickets
+                        .map(
+                          (ticket) =>
+                            window.location.origin + '/#/claim/' + ticket
+                        )
+                        .join('\n')}
+                      classNames={{
+                        base: 'w-16 pl-2 py-0 border-small border-green-500',
+                        symbol: 'text-cyan-400',
+                        copyButton: 'text-cyan-400 pb-0.5 pr-4',
+                      }}
+                    />
+                  </div>
+                </div>
               )}
             </div>
           </>

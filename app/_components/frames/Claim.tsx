@@ -1,52 +1,50 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { cn } from '@utils/tw'
-import { useModal } from 'connectkit'
-import { useChainId, useAccount, useContractRead } from 'wagmi'
+import { useContractRead } from 'wagmi'
 import load from '@contracts/loader'
-//import { useTransact } from '@components/hooks/Transact'
-import WrongChain from '@components/elements/WrongChain'
-import PleaseConnect from '@components/elements/PleaseConnect'
 import Title from '@components/elements/Title'
-import { FaRegMoneyBill1, FaWandMagicSparkles } from 'react-icons/fa6'
+import { FaRegMoneyBill1, FaLock, FaCircleNotch } from 'react-icons/fa6'
 import { useParams } from 'react-router-dom'
 import { extractFromTicketHash } from '@utils/packing'
 
 export default function Claim() {
-  const { data } = useParams()
-  const [chainId, setChainId] = useState(0)
+  const { ticketCode } = useParams()
   const [ticket, setTicket] = useState({
-    orderId: '',
-    orderSecret: '',
-    ticketSecret: '',
-    signature: { v: BigInt(0), r: '' as `0x${string}`, s: '' as `0x${string}` },
+    chainId: 0,
+    content: {
+      orderId: '',
+      orderSecret: '',
+      ticketSecret: '',
+      signature: {
+        v: BigInt(0),
+        r: '' as `0x${string}`,
+        s: '' as `0x${string}`,
+      },
+    },
   })
-  const { isConnected } = useAccount()
-  const { setOpen, openSwitchNetworks } = useModal()
-  const selectedChainId = useChainId()
-  const contract = load('QRFlow', chainId)
-  //const [isLoading, setIsLoading] = useState(false)
-  const decodeTicket = async (ticketHash: string) => {
-    const decoded = await extractFromTicketHash(ticketHash)
-    setChainId(decoded[0])
-    setTicket(decoded[1])
+  //const { isConnected } = useAccount()
+  //const { setOpen, openSwitchNetworks } = useModal()
+  //const selectedChainId = useChainId()
+  const contract = load('QRFlow', ticket.chainId)
+  const [isLoading, setIsLoading] = useState(true)
+  const decodeTicket = async (ticketCode: string) => {
+    setTicket(await extractFromTicketHash(ticketCode))
   }
-  const { data: content } = useContractRead({
-    chainId: selectedChainId,
+  const { data } = useContractRead({
+    chainId: ticket.chainId,
     ...contract,
     functionName: 'isValid',
-    args: [ticket],
-    enabled: chainId > 0,
+    args: [ticket.content],
+    enabled: ticket.chainId > 0,
   })
   useEffect(() => {
-    if (data) decodeTicket(data)
-  }, [])
+    const result = data as keyof number
+    if (result && (result[0] as string).length > 0) setIsLoading(false)
+  }, [data])
   useEffect(() => {
-    if (isConnected && !contract) openSwitchNetworks()
-  }, [isConnected && selectedChainId])
-  useEffect(() => {
-    if (!isConnected) setOpen(true)
-  }, [])
+    if (ticketCode) decodeTicket(ticketCode)
+  }, [ticketCode])
   return (
     <>
       <Title
@@ -56,30 +54,26 @@ export default function Claim() {
       <div
         className={cn(
           'flex flex-col h-full min-w-[320px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
-          !isConnected || !contract ? 'w-full' : ''
+          !data ? 'w-full' : ''
         )}
       >
-        {!isConnected ? (
-          <PleaseConnect />
-        ) : !contract ? (
-          <WrongChain />
-        ) : !data ? (
+        {!ticketCode ? (
           <div className="flex flex-col items-center justify-center w-full h-full">
-            <FaWandMagicSparkles className="text-6xl" />
-            <span className="m-3 text-3xl font-bold text-center">
-              Not ready yet
+            <FaLock className="mb-4 text-6xl" />
+            <span className="text-xl font-bold w-44 text-center">
+              Only accessible via a link or by scanning a QR code
             </span>
           </div>
-        ) : (
+        ) : !isLoading ? (
           <div className="flex flex-col items-center justify-center w-full h-full">
-            <span className="w-80 h-80 text-sm items-center justify-center break-words">
+            <span className="w-80 h-80 text-sm items-center justify-center text-center break-words p-2">
               {JSON.stringify(
                 {
-                  ...ticket,
+                  ...ticket.content,
                   signature: {
-                    r: '0x' + ticket.signature?.r,
-                    s: '0x' + ticket.signature?.s,
-                    v: Number(ticket.signature?.v),
+                    r: '0x' + ticket.content.signature?.r,
+                    s: '0x' + ticket.content.signature?.s,
+                    v: Number(ticket.content.signature?.v),
                   },
                 },
                 null,
@@ -87,17 +81,24 @@ export default function Claim() {
               )}
               <br />
               <br />
-              {content
+              {data
                 ? JSON.stringify({
-                    ticketId: (content as keyof number)[0] as string,
+                    ticketId: (data as keyof number)[0] as string,
                     amount:
                       Number(
-                        BigInt((content as keyof number)[1]) / BigInt(10 ** 10)
+                        BigInt((data as keyof number)[1]) / BigInt(10 ** 10)
                       ) /
                       10 ** 8,
-                    streamed: Boolean(BigInt((content as keyof number)[2])),
+                    streamed: Boolean(BigInt((data as keyof number)[2])),
                   })
                 : 'Invalid'}
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center w-full h-full mb-10">
+            <FaCircleNotch className="mb-4 text-6xl animate-spin" />
+            <span className="text-xl font-bold w-44 text-center">
+              Loading ticket...
             </span>
           </div>
         )}

@@ -19,7 +19,7 @@ export default function Home() {
     { path: '', element: <Welcome /> },
     { path: 'send', element: <Send /> },
     { path: 'claim', element: <Claim /> },
-    { path: 'claim/:data', element: <Claim /> },
+    { path: 'claim/:ticketCode', element: <Claim /> },
     { path: 'track', element: <Track /> },
     { path: 'track/:addr', element: <Track /> },
     { path: '404', element: <Error /> },

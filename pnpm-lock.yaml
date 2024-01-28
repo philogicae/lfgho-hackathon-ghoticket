@@ -20,6 +20,9 @@ dependencies:
   '@vercel/speed-insights':
     specifier: ^1.0.8
     version: 1.0.8(next@14.1.0)(react@18.2.0)
+  '@wojtekmaj/react-qr-svg':
+    specifier: ^1.0.0
+    version: 1.0.0(@types/react@18.2.48)(react-dom@18.2.0)(react@18.2.0)
   '@zalari/string-compression-utils':
     specifier: ^0.1.1
     version: 0.1.1
@@ -5183,6 +5186,23 @@ packages:
       tslib: 1.14.1
     dev: false
 
+  /@wojtekmaj/react-qr-svg@1.0.0(@types/react@18.2.48)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-lib//sHuqvbITEymBz37zhyZMalzu9vgrNfptttEVrDC1oOIBNam0c0rBLsrwjsdAuVEruBZtan1b9sD29ALmg==}
+    peerDependencies:
+      '@types/react': ^16.8.0 || ^17.0.0 || ^18.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+    dependencies:
+      '@types/react': 18.2.48
+      prop-types: 15.8.1
+      qrcode-generator: 1.4.4
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: false
+
   /@zalari/string-compression-utils@0.1.1:
     resolution: {integrity: sha512-DF5XCdtIwrJfzpJkzLIayOJtsA8oXMgmd3QTUlMlp3E4xrL+w1hEsuasOvQLAbJDpb45CLdTybRNKcOTaZd6JA==}
     engines: {node: ^18}
@@ -7094,6 +7114,7 @@ packages:
       is-hex-prefixed: 1.0.0
       strip-hex-prefix: 1.0.0
     dev: true
+    bundledDependencies: false
 
   /eventemitter3@4.0.7:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
@@ -9423,7 +9444,6 @@ packages:
       loose-envify: 1.4.0
       object-assign: 4.1.1
       react-is: 16.13.1
-    dev: true
 
   /proxy-compare@2.5.1:
     resolution: {integrity: sha512-oyfc0Tx87Cpwva5ZXezSp5V9vht1c7dZBhvuV/y3ctkgMVUmiAGDVeeB0dKhGSyT0v1ZTEQYpe/RXlBVBNuCLA==}
@@ -9436,6 +9456,10 @@ packages:
   /punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
+
+  /qrcode-generator@1.4.4:
+    resolution: {integrity: sha512-HM7yY8O2ilqhmULxGMpcHSF1EhJJ9yBj8gvDEuZ6M+KGJ0YY2hKpnXvRD+hZPLrDVck3ExIGhmPtSdcjC+guuw==}
+    dev: false
 
   /qrcode@1.5.3:
     resolution: {integrity: sha512-puyri6ApkEHYiVl4CFzo1tDkAZ+ATcnbJrJ6RiBM1Fhctdn/ix9MTE3hRph33omisEbC/2fcfemsseiKgBPKZg==}

@@ -32,8 +32,7 @@ export default function Track() {
       />
       <div
         className={cn(
-          'flex flex-col h-full min-w-[320px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
-          !isConnected || !contract ? 'w-full' : ''
+          'flex flex-col h-full w-full min-w-[320px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl'
         )}
       >
         {!isConnected ? (
@@ -41,10 +40,10 @@ export default function Track() {
         ) : !contract ? (
           <WrongChain />
         ) : (
-          <div className="flex flex-col items-center justify-center w-full h-full">
-            <FaWandMagicSparkles className="text-6xl" />
-            <span className="m-3 text-3xl font-bold text-center">
-              Not ready yet
+          <div className="flex flex-col items-center justify-center w-full h-full mb-10">
+            <FaWandMagicSparkles className="mb-4 text-6xl" />
+            <span className="text-xl font-bold w-48 text-center">
+              Not Ready Yet
             </span>
           </div>
         )}
