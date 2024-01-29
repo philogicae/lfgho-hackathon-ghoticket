@@ -261,7 +261,7 @@ contract QRFlow is Context, EIP712 {
       revert TicketAlreadyClaimed(ticket.orderId, ticketId);
     }
     Order memory order = _orders[ticket.orderId];
-    if (order.deadline < block.timestamp) {
+    if (order.deadline < block.timestamp || order.closed > 0) {
       revert TicketExpired(ticket.orderId, ticketId, order.deadline);
     }
     address signer = ecrecover(

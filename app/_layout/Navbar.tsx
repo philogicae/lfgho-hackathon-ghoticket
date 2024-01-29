@@ -1,7 +1,13 @@
 'use client'
 import { Image } from '@nextui-org/react'
 import { ConnectKitButton } from 'connectkit'
-import { FaEthereum, FaXTwitter, FaGithub, FaQrcode } from 'react-icons/fa6'
+import {
+  FaQrcode,
+  FaEthereum,
+  FaFileCode,
+  FaGithub,
+  FaXTwitter,
+} from 'react-icons/fa6'
 
 export default function Navbar({ children }: { children: React.ReactNode }) {
   return (
@@ -49,12 +55,32 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
             ETHGlobal-2024 <FaEthereum className="px-1 text-lg" /> LFGHO
             Hackathon
           </a>
-          <div className="flex flex-row text-lg pb-0.5">
+          <div className="flex flex-row text-lg">
+            <a
+              href={
+                window.location.origin === 'https://qrflow.xyz'
+                  ? 'https://qrflow.on-fleek.app/'
+                  : 'https://qrflow.xyz'
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pr-1 hover:text-cyan-300 active:text-cyan-300 text-sm font-sans font-bold"
+            >
+              ALT
+            </a>
+            <a
+              href="https://github.com/philogicae/lfgho-hackathon-ghoticket/blob/main/contracts/QRFlow.sol"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pr-1 hover:text-cyan-300 active:text-cyan-300"
+            >
+              <FaFileCode />
+            </a>
             <a
               href="https://github.com/philogicae"
               target="_blank"
               rel="noopener noreferrer"
-              className="pr-1 hover:text-cyan-300 active:text-cyan-300"
+              className="pr-1 pb-0.5 hover:text-cyan-300 active:text-cyan-300"
             >
               <FaGithub />
             </a>

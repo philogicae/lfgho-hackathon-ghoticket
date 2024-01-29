@@ -62,7 +62,7 @@ export default function Notification({
     <div
       id={id}
       className={cn(
-        'flex flex-row items-center justify-center whitespace-nowrap rounded-lg py-2 pl-3 pr-2 text-sm w-52 pointer-events-auto mr-1.5 mt-1 z-20',
+        'flex flex-row items-center justify-center whitespace-nowrap rounded-lg py-2 pl-3 pr-2 text-sm w-52 pointer-events-auto mr-1.5 mt-1 z-50',
         colors[type],
         className
       )}

@@ -1,12 +1,19 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { cn } from '@utils/tw'
-import { useContractRead } from 'wagmi'
+import { useContractReads } from 'wagmi'
 import load from '@contracts/loader'
 import Title from '@components/elements/Title'
-import { FaRegMoneyBill1, FaLock, FaCircleNotch } from 'react-icons/fa6'
+import {
+  FaRegMoneyBill1,
+  FaLock,
+  FaCircleNotch,
+  FaBan,
+  FaQrcode,
+} from 'react-icons/fa6'
 import { useParams } from 'react-router-dom'
 import { extractFromTicketHash } from '@utils/packing'
+import { Hex, Address, zeroAddress } from 'viem'
 
 export default function Claim() {
   const { ticketCode } = useParams()
@@ -27,20 +34,96 @@ export default function Claim() {
   //const { setOpen, openSwitchNetworks } = useModal()
   //const selectedChainId = useChainId()
   const contract = load('QRFlow', ticket.chainId)
+  const [data, setData] = useState<{
+    orderId: Hex
+    creator: Address
+    totalAmount: number
+    createdAt: number
+    deadline: number
+    closed: boolean
+    nbTickets: number
+    status: number[]
+    ticketIndex: number
+    ticketId: Hex
+    amount: number
+    streamed: boolean
+  }>({
+    orderId: '0x0',
+    creator: '0x0',
+    totalAmount: 0,
+    createdAt: 0,
+    deadline: 0,
+    closed: false,
+    nbTickets: 0,
+    status: [],
+    ticketIndex: 0,
+    ticketId: '0x0',
+    amount: 0,
+    streamed: false,
+  })
   const [isLoading, setIsLoading] = useState(true)
   const decodeTicket = async (ticketCode: string) => {
-    setTicket(await extractFromTicketHash(ticketCode))
+    const decoded = await extractFromTicketHash(ticketCode)
+    if (decoded) setTicket(decoded)
+    else setIsLoading(false)
   }
-  const { data } = useContractRead({
-    chainId: ticket.chainId,
-    ...contract,
-    functionName: 'isValid',
-    args: [ticket.content],
-    enabled: ticket.chainId > 0,
+  useContractReads({
+    contracts: [
+      {
+        chainId: ticket.chainId,
+        ...contract,
+        functionName: 'getFullOrder',
+        args: [ticket.content.orderId],
+      },
+      {
+        chainId: ticket.chainId,
+        ...contract,
+        functionName: 'isValid',
+        args: [ticket.content],
+      },
+    ],
+    enabled: ticket.chainId > 0 && isLoading,
+    onSuccess: (output) => {
+      const x = output![0].result as {
+        order: {
+          id: Hex
+          order: {
+            creator: Address
+            amount: bigint
+            createdAt: bigint
+            deadline: bigint
+            streamed: bigint
+            closed: bigint
+          }
+          nbTickets: bigint
+        }
+        status: { ticketIds: Hex[]; claimers: Address[] }
+      }
+      const y = output![1].result as [Hex, bigint, bigint]
+      const nbTickets = Number(x.order.nbTickets)
+      const status = x.status.claimers.map((c) => Number(c !== zeroAddress))
+      for (let i = 0; i < 10 - nbTickets; i++) {
+        status.push(-1)
+      }
+      setData({
+        orderId: x.order.id,
+        creator: x.order.order.creator,
+        totalAmount: Number(x.order.order.amount / BigInt(10 ** 10)) / 10 ** 8,
+        createdAt: Number(x.order.order.createdAt) * 1000,
+        deadline: Number(x.order.order.deadline) * 1000,
+        closed: Boolean(x.order.order.closed),
+        nbTickets: nbTickets,
+        status: status,
+        ticketIndex: x.status.ticketIds.indexOf(y[0]) + 1,
+        ticketId: y[0],
+        amount: Number(y[1] / BigInt(10 ** 10)) / 10 ** 8,
+        streamed: Boolean(y[2]),
+      })
+    },
+    onError: () => setIsLoading(false),
   })
   useEffect(() => {
-    const result = data as keyof number
-    if (result && (result[0] as string).length > 0) setIsLoading(false)
+    if (data.amount > 0) setIsLoading(false)
   }, [data])
   useEffect(() => {
     if (ticketCode) decodeTicket(ticketCode)
@@ -71,35 +154,72 @@ export default function Claim() {
               Loading ticket...
             </span>
           </div>
+        ) : data.amount === 0 ? (
+          <div className="flex flex-col items-center justify-center w-full h-full mb-10">
+            <FaBan className="mb-4 text-6xl" />
+            <span className="text-xl font-bold w-44 text-center">
+              Invalid or Expired
+            </span>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center w-full h-full">
-            <span className="w-80 h-80 text-sm items-center justify-center text-center break-words p-2">
-              {JSON.stringify(
-                {
-                  ...ticket.content,
-                  signature: {
-                    r: '0x' + ticket.content.signature?.r,
-                    s: '0x' + ticket.content.signature?.s,
-                    v: Number(ticket.content.signature?.v),
-                  },
-                },
-                null,
-                2
-              )}
-              <br />
-              <br />
-              {data
-                ? JSON.stringify({
-                    ticketId: (data as keyof number)[0] as string,
-                    amount:
-                      Number(
-                        BigInt((data as keyof number)[1]) / BigInt(10 ** 10)
-                      ) /
-                      10 ** 8,
-                    streamed: Boolean(BigInt((data as keyof number)[2])),
-                  })
-                : 'Invalid'}
-            </span>
+            <div className="w-80 h-96 flex flex-col text-sm items-center justify-between text-center font-mono break-words p-3">
+              <div className="w-full flex flex-row items-center justify-between text-3xl font-bold text-green-600">
+                <FaQrcode />
+                <span>VALID TICKET</span>
+                <FaQrcode />
+              </div>
+              <div className="w-full flex flex-col border-1 border-blue-500 rounded-xl p-2 items-start justify-center">
+                <span>
+                  Order ID:{' '}
+                  {data.orderId.slice(0, 10) + '...' + data.orderId.slice(-10)}
+                </span>
+                <span>
+                  Creator:{' '}
+                  {data.creator.slice(0, 10) + '...' + data.creator.slice(-10)}
+                </span>
+                <span>Total Amount $GHO: {data.totalAmount}</span>
+              </div>
+              <div className="p-0.5 flex flex-col w-full border-1 border-amber-500 rounded-xl">
+                <span className="border-b-1 border-amber-500">
+                  Created at: {new Date(data.createdAt).toLocaleString()}
+                </span>
+                <span>
+                  Expires on: {new Date(data.deadline).toLocaleString()}
+                </span>
+              </div>
+              <div className="w-full flex flex-row items-center justify-center">
+                <span className="pr-3">Claim Status:</span>
+                <div className="border-1 border-gray-500 rounded-lg p-0.5 pl-2">
+                  {data.status.map((s, k) => (
+                    <span
+                      key={k}
+                      className={cn(
+                        'pr-2',
+                        s > 0
+                          ? 'text-green-500'
+                          : s === 0
+                            ? 'text-amber-500'
+                            : 'text-gray-800'
+                      )}
+                    >
+                      ●
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="w-full flex flex-col border-1 border-green-500 rounded-xl p-2 items-start justify-center">
+                <span>Ticket Index: {data.ticketIndex}</span>
+                <span>
+                  Ticket ID:{' '}
+                  {data.ticketId.slice(0, 10) +
+                    '...' +
+                    data.ticketId.slice(-10)}
+                </span>
+                <span>Amount $GHO: {data.amount}</span>
+                <span>Stream: {data.streamed.toString()}</span>
+              </div>
+            </div>
           </div>
         )}
       </div>
