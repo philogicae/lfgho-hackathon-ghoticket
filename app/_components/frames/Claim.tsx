@@ -64,7 +64,14 @@ export default function Claim() {
               Only accessible via a link or by scanning a QR code
             </span>
           </div>
-        ) : !isLoading ? (
+        ) : isLoading ? (
+          <div className="flex flex-col items-center justify-center w-full h-full mb-10">
+            <FaCircleNotch className="mb-4 text-6xl animate-spin" />
+            <span className="text-xl font-bold w-44 text-center">
+              Loading ticket...
+            </span>
+          </div>
+        ) : (
           <div className="flex flex-col items-center justify-center w-full h-full">
             <span className="w-80 h-80 text-sm items-center justify-center text-center break-words p-2">
               {JSON.stringify(
@@ -92,13 +99,6 @@ export default function Claim() {
                     streamed: Boolean(BigInt((data as keyof number)[2])),
                   })
                 : 'Invalid'}
-            </span>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center w-full h-full mb-10">
-            <FaCircleNotch className="mb-4 text-6xl animate-spin" />
-            <span className="text-xl font-bold w-44 text-center">
-              Loading ticket...
             </span>
           </div>
         )}

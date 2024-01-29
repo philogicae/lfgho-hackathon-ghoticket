@@ -43,6 +43,8 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
           <a
             href="https://ethglobal.com/showcase/ghoticket-0hkpx"
             className="flex flex-row hover:underline items-center justify-center hover:text-cyan-300 active:text-cyan-300"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             ETHGlobal-2024 <FaEthereum className="px-1 text-lg" /> LFGHO
             Hackathon
@@ -50,11 +52,17 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
           <div className="flex flex-row text-lg pb-0.5">
             <a
               href="https://github.com/philogicae"
+              target="_blank"
+              rel="noopener noreferrer"
               className="pr-1 hover:text-cyan-300 active:text-cyan-300"
             >
               <FaGithub />
             </a>
-            <a href="https://twitter.com/philogicae">
+            <a
+              href="https://twitter.com/philogicae"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <FaXTwitter className="hover:text-cyan-300 active:text-cyan-300" />
             </a>
           </div>

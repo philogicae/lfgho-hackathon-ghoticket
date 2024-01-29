@@ -1,7 +1,7 @@
 {
   "name": "lfgho-hackathon-ghoticket",
   "description": "Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!ing cash!",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "repository": "https://github.com/philogicae/lfgho-hackathon-ghoticket",
   "private": false,
   "author": "@philogicae",
@@ -44,7 +44,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/contracts": "^5.0.1",
-    "@types/node": "^20.11.8",
+    "@types/node": "^20.11.10",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "autoprefixer": "^10.4.17",

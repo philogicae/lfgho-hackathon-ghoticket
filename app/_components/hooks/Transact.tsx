@@ -35,6 +35,7 @@ const useTransact = ({
   const { trigger: preTrigger, wait: preWait, done: preDone } = useTrigger()
   const { trigger, wait, done } = useTrigger()
   const { config, isSuccess: isPrepareSuccess } = usePrepareContractWrite({
+    chainId,
     ...contract,
     functionName: method,
     args: args,
@@ -61,7 +62,10 @@ const useTransact = ({
     isError: isPostError,
     error: postError,
   } = useWaitForTransaction({
+    chainId,
     hash: tx?.hash,
+    enabled: Boolean(tx?.hash),
+    confirmations: 1,
     onSuccess: () => {
       if (!executed.current) {
         executed.current = true
@@ -81,7 +85,6 @@ const useTransact = ({
       })
       onError && onError()
     },
-    enabled: args.length > 0 && !executed.current,
   })
   useEffect(() => {
     if (tx?.hash) {

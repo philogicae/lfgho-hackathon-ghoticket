@@ -18,6 +18,7 @@ import {
   FaFileSignature,
   FaRegCircleCheck,
   FaPrint,
+  FaShareFromSquare,
 } from 'react-icons/fa6'
 import {
   Input,
@@ -76,11 +77,20 @@ export default function Send() {
     executed: false,
     tickets: [] as string[],
   })
-  const orderSecret = useRef<Hex>(generateHex())
-  const ticketSecrets = useRef<Hex[]>(generateBatchHex())
-  const bigAmount = useRef<bigint>(BigInt(0))
+  const order = useRef<{
+    id: Hex
+    secret: Hex
+    ticketSecrets: Hex[]
+    amount: bigint
+    signDeadline: bigint
+  }>({
+    id: '0x0',
+    secret: generateHex(),
+    ticketSecrets: generateBatchHex(),
+    amount: BigInt(0),
+    signDeadline: BigInt(0),
+  })
   const [currentTicket, setCurrentTicket] = useState(1)
-  const signatureDeadline = useRef<bigint>(BigInt(0))
   const { signRequest, signature, isLoadingSign, isErrorSign, convert } =
     useSigner()
   const { sendTx, isReadyTx, isLoadingTx, isSuccessTx, isErrorTx } =
@@ -124,7 +134,7 @@ export default function Send() {
     MAX: any,
     NONCE_GHO: bigint,
     NONCE_QRFLOW: bigint,
-    orderId: Hex
+    updatedOrderId: Hex
   if (initReads) {
     DECIMALS = initReads![0].result as number
     MAX =
@@ -134,7 +144,7 @@ export default function Send() {
       10 ** PRECISION
     NONCE_GHO = initReads![2].result as bigint
     NONCE_QRFLOW = initReads![3].result as bigint
-    orderId = keccak256(
+    updatedOrderId = keccak256(
       encodePacked(['address', 'uint256'], [address!, NONCE_QRFLOW])
     )
   }
@@ -144,15 +154,16 @@ export default function Send() {
     deadline: number
     stream: boolean
     nbTickets: number
-    orderSecret: Hex
     ticketIds: Hex[]
   }>({
     amount: '',
     deadline: 0,
     stream: false,
     nbTickets: 0,
-    orderSecret: orderSecret.current,
-    ticketIds: generateTicketIds(orderSecret.current, ticketSecrets.current),
+    ticketIds: generateTicketIds(
+      order.current.secret,
+      order.current.ticketSecrets
+    ),
   })
   const restrict = (n: any, min: number, max: number) =>
     Number(n) > max ? max : Number(n) < min ? min : n
@@ -194,19 +205,20 @@ export default function Send() {
       const tempAmount =
         BigInt(Number(data.amount * 10 ** PRECISION)) *
         BigInt(10 ** (DECIMALS - PRECISION))
-      bigAmount.current = tempAmount - (tempAmount % BigInt(data.nbTickets))
+      order.current.amount = tempAmount - (tempAmount % BigInt(data.nbTickets))
+      order.current.id = updatedOrderId
       signRequest({
         args: generateTicketPermit({
           chainId: chainId,
           contactAddr: contract!.address,
           creator: address!,
-          orderId: orderId,
-          orderSecret: data.orderSecret,
+          orderId: order.current.id,
+          orderSecret: order.current.secret,
         }),
         index: 1,
       })
     } else if (steps.ready2 && !steps.ready3) {
-      signatureDeadline.current = BigInt(
+      order.current.signDeadline = BigInt(
         Math.floor(new Date().getTime() / 1000 + 5 * 60)
       )
       signRequest({
@@ -215,9 +227,9 @@ export default function Send() {
           contactAddr: gho!.address,
           owner: address!,
           spender: contract!.address!,
-          value: bigAmount.current,
+          value: order.current.amount,
           nonce: NONCE_GHO,
-          deadline: signatureDeadline.current,
+          deadline: order.current.signDeadline,
         }),
         index: 2,
       })
@@ -225,12 +237,12 @@ export default function Send() {
       setSteps({
         ...steps,
         tx3: [
-          bigAmount.current,
+          order.current.amount,
           BigInt(Math.floor(data.deadline / 1000)),
           Number(data.stream),
           data.ticketIds.slice(0, data.nbTickets),
           steps.sign2,
-          signatureDeadline.current,
+          order.current.signDeadline,
         ],
       })
     } else if (steps.ready3 && isReadyTx && !steps.executed) {
@@ -288,9 +300,9 @@ export default function Send() {
             executed: true,
             tickets: await generateBatchTicketHash(
               chainId,
-              orderId,
-              orderSecret.current,
-              ticketSecrets.current.slice(0, data.nbTickets),
+              order.current.id,
+              order.current.secret,
+              order.current.ticketSecrets.slice(0, data.nbTickets),
               steps.sign1
             ),
           })
@@ -547,6 +559,140 @@ export default function Send() {
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-between">
+                  <div className="w-full flex flex-row items-center justify-center">
+                    <Snippet
+                      symbol=""
+                      variant="bordered"
+                      codeString={steps.tickets
+                        .map(
+                          (ticket, id) =>
+                            `#${id + 1 < 10 ? '0' : ''}${id + 1}` +
+                            ': ' +
+                            window.location.origin +
+                            '/#/claim/' +
+                            ticket
+                        )
+                        .join('\n')}
+                      classNames={{
+                        base: 'w-52 py-0 pl-4 pr-1 border-small border-green-400',
+                        copyButton: 'text-cyan-300 pb-0.5',
+                      }}
+                    >
+                      Copy all ticket links
+                    </Snippet>
+                    <button
+                      className="ml-1.5 p-1.5 text-cyan-300 border-1 border-green-500 rounded-xl"
+                      onClick={() =>
+                        navigator.share({
+                          title: 'QRFlow Tickets',
+                          text: steps.tickets
+                            .map(
+                              (ticket, id) =>
+                                `#${id + 1 < 10 ? '0' : ''}${id + 1}` +
+                                ': ' +
+                                window.location.origin +
+                                '/#/claim/' +
+                                ticket
+                            )
+                            .join('\n'),
+                        })
+                      }
+                    >
+                      <FaShareFromSquare className="h-5 w-5 px-0.5 pb-0.5" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-2 border-1 border-cyan-300 rounded-2xl">
+                    <div className="flex flex-row items-center justify-center mb-2">
+                      <Snippet
+                        symbol={`#${currentTicket < 10 ? '0' : ''}${currentTicket}`}
+                        variant="bordered"
+                        codeString={
+                          window.location.origin +
+                          '/#/claim/' +
+                          steps.tickets.at(currentTicket - 1)
+                        }
+                        classNames={{
+                          base: 'w-52 pl-2 pr-1 py-0 gap-0 border-small border-amber-500',
+                          symbol: 'text-cyan-300',
+                          copyButton: 'text-cyan-300 pb-0.5',
+                          pre: 'truncate',
+                        }}
+                      >
+                        <a
+                          href={
+                            window.location.origin +
+                            '/#/claim/' +
+                            steps.tickets.at(currentTicket - 1)
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="pl-1"
+                        >
+                          {`$GHO: ${data.amount / data.nbTickets}`}
+                        </a>
+                      </Snippet>
+                      <button
+                        className="ml-1.5 p-1.5 text-cyan-300 border-1 border-amber-500 rounded-xl"
+                        onClick={() =>
+                          navigator.share({
+                            title:
+                              'QRFlow Ticket ' +
+                              `#${currentTicket < 10 ? '0' : ''}${currentTicket}`,
+                            url:
+                              window.location.origin +
+                              '/#/claim/' +
+                              steps.tickets.at(currentTicket - 1),
+                          })
+                        }
+                      >
+                        <FaShareFromSquare className="h-5 w-5 px-0.5 pb-0.5" />
+                      </button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      color="warning"
+                      onPress={onOpen}
+                      className="border-1 w-full tracking-widest font-bold"
+                    >
+                      Open QR Code
+                    </Button>
+                    <Modal
+                      isOpen={isOpen}
+                      onClose={onClose}
+                      placement="center"
+                      classNames={{ base: 'm-2', closeButton: 'text-red-500' }}
+                    >
+                      <ModalContent>
+                        {() => (
+                          <>
+                            <ModalHeader className="flex flex-row p-3 pr-10 items-center">
+                              <Pagination
+                                loop
+                                showControls
+                                isCompact
+                                size="sm"
+                                color="success"
+                                total={data.nbTickets}
+                                page={currentTicket}
+                                onChange={setCurrentTicket}
+                              />
+                            </ModalHeader>
+                            <ModalBody className="bg-white p-3">
+                              <QrSvg
+                                value={
+                                  window.location.origin +
+                                  '/#/claim/' +
+                                  steps.tickets.at(currentTicket - 1)
+                                }
+                                level="L"
+                                margin={1}
+                              />
+                            </ModalBody>
+                          </>
+                        )}
+                      </ModalContent>
+                    </Modal>
+                  </div>
                   <Pagination
                     loop
                     showControls
@@ -557,76 +703,6 @@ export default function Send() {
                     page={currentTicket}
                     onChange={setCurrentTicket}
                   />
-
-                  <Button variant="ghost" color="success" onPress={onOpen}>
-                    Open QR Code
-                  </Button>
-                  <Modal isOpen={isOpen} onClose={onClose} placement="center">
-                    <ModalContent>
-                      {() => (
-                        <>
-                          <ModalHeader className="flex flex-col gap-1 text-cyan-300">
-                            {`#${currentTicket < 10 ? '0' : ''}${currentTicket}`}
-                          </ModalHeader>
-                          <ModalBody>
-                            <QrSvg
-                              value={
-                                window.location.origin +
-                                '/#/claim/' +
-                                steps.tickets.at(currentTicket - 1)
-                              }
-                              level="L"
-                              margin={1}
-                            />
-                          </ModalBody>
-                        </>
-                      )}
-                    </ModalContent>
-                  </Modal>
-                  <div className="flex flex-row w-full items-center justify-between">
-                    <Snippet
-                      symbol={`#${currentTicket < 10 ? '0' : ''}${currentTicket}`}
-                      variant="bordered"
-                      codeString={
-                        window.location.origin +
-                        '/#/claim/' +
-                        steps.tickets.at(currentTicket - 1)
-                      }
-                      classNames={{
-                        base: 'w-52 pl-2 pr-1 py-0 border-small border-amber-500',
-                        symbol: 'text-cyan-400',
-                        copyButton: 'text-cyan-400 pb-0.5',
-                      }}
-                    >
-                      <a
-                        href={
-                          window.location.origin +
-                          '/#/claim/' +
-                          steps.tickets.at(currentTicket - 1)
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="pl-1"
-                      >
-                        {`$GHO: ${data.amount / data.nbTickets}`}
-                      </a>
-                    </Snippet>
-                    <Snippet
-                      symbol="ALL"
-                      variant="bordered"
-                      codeString={steps.tickets
-                        .map(
-                          (ticket) =>
-                            window.location.origin + '/#/claim/' + ticket
-                        )
-                        .join('\n')}
-                      classNames={{
-                        base: 'w-16 pl-2 py-0 border-small border-green-500',
-                        symbol: 'text-cyan-400',
-                        copyButton: 'text-cyan-400 pb-0.5 pr-4',
-                      }}
-                    />
-                  </div>
                 </div>
               )}
             </div>
