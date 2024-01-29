@@ -10,10 +10,12 @@ import {
   FaCircleNotch,
   FaBan,
   FaQrcode,
+  FaArrowRightLong,
 } from 'react-icons/fa6'
 import { useParams } from 'react-router-dom'
 import { extractFromTicketHash } from '@utils/packing'
 import { Hex, Address, zeroAddress } from 'viem'
+import { Progress } from '@nextui-org/react'
 
 export default function Claim() {
   const { ticketCode } = useParams()
@@ -137,7 +139,7 @@ export default function Claim() {
       <div
         className={cn(
           'flex flex-col h-full min-w-[320px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
-          !data ? 'w-full' : ''
+          data.amount === 0 ? 'w-full' : ''
         )}
       >
         {!ticketCode ? (
@@ -162,63 +164,147 @@ export default function Claim() {
             </span>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center w-full h-full">
-            <div className="w-80 h-96 flex flex-col text-sm items-center justify-between text-center font-mono break-words p-3">
-              <div className="w-full flex flex-row items-center justify-between text-3xl font-bold text-green-600">
-                <FaQrcode />
-                <span>VALID TICKET</span>
-                <FaQrcode />
+          <div className="flex flex-col items-center justify-start w-full h-full">
+            <div className="border-b-1 text-cyan-300 border-cyan-300 flex w-full items-center justify-between font-mono tracking-tighter text-xs">
+              <div />
+              <span
+                className={cn(
+                  false
+                    ? 'animate-pulse text-orange-400 font-bold'
+                    : false
+                      ? 'text-green-400'
+                      : ''
+                )}
+              >
+                1. Reserve Ticket
+              </span>
+              <FaArrowRightLong className="h-5 w-5 p-1" />
+              <span
+                className={cn(
+                  false
+                    ? 'animate-pulse text-orange-400 font-bold'
+                    : false
+                      ? 'text-green-400'
+                      : ''
+                )}
+              >
+                2. Claim Ticket
+              </span>
+              <div />
+            </div>
+            <div className="w-full flex flex-row items-center justify-between text-3xl font-bold text-green-500 p-2 pb-1">
+              <FaQrcode />
+              <span>VALID TICKET</span>
+              <FaQrcode />
+            </div>
+            <div className="h-full flex flex-col text-sm items-center justify-between text-center font-mono break-words px-3 py-1">
+              <div />
+              <div className="w-full flex flex-col border-1 border-blue-500 rounded-xl items-start justify-center">
+                <span className="w-full text-lg font-bold text-blue-500 border-b-1 border-blue-500">
+                  ORIGINAL ORDER
+                </span>
+                <div className="w-full flex flex-col px-2 py-1 items-start justify-center text-xs">
+                  <div className="w-full flex flex-row items-center justify-start">
+                    <span className="text-cyan-400 pr-1.5">From:</span>
+                    <span>{data.creator}</span>
+                  </div>
+                  <div className="w-full flex flex-row items-center justify-start">
+                    <span className="text-cyan-400 pr-1.5">Order ID:</span>
+                    <span>
+                      {data.orderId.slice(0, 10) +
+                        '...' +
+                        data.orderId.slice(-10)}
+                    </span>
+                  </div>
+                  <div className="w-full flex flex-row items-center justify-start">
+                    <span className="text-cyan-400 pr-1.5">
+                      Total Amount $GHO:
+                    </span>
+                    <span>{data.totalAmount}</span>
+                  </div>
+                  <div className="w-full flex flex-row items-center justify-between py-1">
+                    <span className="text-sm text-cyan-400">Claim Status:</span>
+                    <div className="border-1 border-gray-500 rounded-lg p-0.5 pl-2.5 pr-0">
+                      {data.status.map((s, k) => (
+                        <span
+                          key={k}
+                          className={cn(
+                            'pr-2.5',
+                            s > 0
+                              ? 'text-green-500'
+                              : s === 0
+                                ? 'text-amber-500'
+                                : 'text-gray-800'
+                          )}
+                        >
+                          ●
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="w-full flex flex-col border-1 border-blue-500 rounded-xl p-2 items-start justify-center">
-                <span>
-                  Order ID:{' '}
-                  {data.orderId.slice(0, 10) + '...' + data.orderId.slice(-10)}
-                </span>
-                <span>
-                  Creator:{' '}
-                  {data.creator.slice(0, 10) + '...' + data.creator.slice(-10)}
-                </span>
-                <span>Total Amount $GHO: {data.totalAmount}</span>
+              <div className="px-2 py-1 flex flex-col w-full border-1 border-amber-500 rounded-xl">
+                <div className="w-full flex flex-row items-center justify-between">
+                  <span className="text-amber-500">Created at:</span>
+                  <span className="text-cyan-500 font-bold tracking-wider">
+                    {new Date(data.createdAt).toLocaleString()}
+                  </span>
+                  <div />
+                </div>
+                <Progress
+                  size="sm"
+                  aria-label="Progress"
+                  value={
+                    (100 * (new Date().getTime() - data.createdAt)) /
+                    (data.deadline - data.createdAt)
+                  }
+                  classNames={{
+                    indicator: 'bg-gradient-to-r from-red-500 to-pink-500',
+                  }}
+                  className="py-1"
+                />
+                <div className="w-full flex flex-row items-center justify-between">
+                  <span className="text-amber-500">Expires on: </span>
+                  <span className="text-red-500 font-bold tracking-wider">
+                    {new Date(data.deadline).toLocaleString()}
+                  </span>
+                  <div />
+                </div>
               </div>
-              <div className="p-0.5 flex flex-col w-full border-1 border-amber-500 rounded-xl">
-                <span className="border-b-1 border-amber-500">
-                  Created at: {new Date(data.createdAt).toLocaleString()}
-                </span>
-                <span>
-                  Expires on: {new Date(data.deadline).toLocaleString()}
-                </span>
-              </div>
-              <div className="w-full flex flex-row items-center justify-center">
-                <span className="pr-3">Claim Status:</span>
-                <div className="border-1 border-gray-500 rounded-lg p-0.5 pl-2">
-                  {data.status.map((s, k) => (
+              <div className="w-full flex flex-col border-1 border-green-500 rounded-xl items-start justify-center">
+                <div className="w-full flex flex-row items-center justify-start border-b-1 border-green-400">
+                  <span className="text-xl px-2 mr-3 text-cyan-400 border-r-1 border-green-400">{`#${data.ticketIndex < 10 ? '0' : ''}${data.ticketIndex}`}</span>
+                  <span className="text-lg font-bold text-green-500 w-full pr-14">
+                    YOUR TICKET
+                  </span>
+                </div>
+                <div className="w-full flex flex-col px-2 py-1 items-start justify-center">
+                  <div className="w-full flex flex-row items-center justify-start">
+                    <span className="text-cyan-400 pr-1.5">ID:</span>
+                    <span>
+                      {data.ticketId.slice(0, 10) +
+                        '...' +
+                        data.ticketId.slice(-10)}
+                    </span>
+                  </div>
+                  <div className="w-full flex flex-row items-center justify-start">
+                    <span className="text-cyan-400 pr-1.5">Amount $GHO:</span>
+                    <span>{data.amount}</span>
+                  </div>
+                  <div className="w-full flex flex-row items-center justify-start">
+                    <span className="text-cyan-400 pr-1.5">Stream:</span>
                     <span
-                      key={k}
-                      className={cn(
-                        'pr-2',
-                        s > 0
-                          ? 'text-green-500'
-                          : s === 0
-                            ? 'text-amber-500'
-                            : 'text-gray-800'
-                      )}
+                      className={
+                        data.streamed ? 'text-green-500' : 'text-amber-500'
+                      }
                     >
                       ●
                     </span>
-                  ))}
+                  </div>
                 </div>
               </div>
-              <div className="w-full flex flex-col border-1 border-green-500 rounded-xl p-2 items-start justify-center">
-                <span>Ticket Index: {data.ticketIndex}</span>
-                <span>
-                  Ticket ID:{' '}
-                  {data.ticketId.slice(0, 10) +
-                    '...' +
-                    data.ticketId.slice(-10)}
-                </span>
-                <span>Amount $GHO: {data.amount}</span>
-                <span>Stream: {data.streamed.toString()}</span>
-              </div>
+              <div />
             </div>
           </div>
         )}
