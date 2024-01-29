@@ -11,6 +11,7 @@ import {
   FaBan,
   FaQrcode,
   FaArrowRightLong,
+  FaRegCopy,
 } from 'react-icons/fa6'
 import { useParams } from 'react-router-dom'
 import { extractFromTicketHash } from '@utils/packing'
@@ -203,27 +204,45 @@ export default function Claim() {
                 <span className="w-full text-lg font-bold text-blue-500 border-b-1 border-blue-500">
                   ORIGINAL ORDER
                 </span>
-                <div className="w-full flex flex-col px-2 py-1 items-start justify-center text-xs">
+                <div className="w-full flex flex-col px-2 py-1 items-start justify-center text-sm">
                   <div className="w-full flex flex-row items-center justify-start">
-                    <span className="text-cyan-400 pr-1.5">From:</span>
-                    <span>{data.creator}</span>
+                    <span className="text-cyan-400 pr-1.5">from:</span>
+                    <span>
+                      {data.creator.slice(0, 10) +
+                        '...' +
+                        data.creator.slice(-10)}
+                    </span>
+                    <FaRegCopy
+                      className="pl-2 text-xl text-amber-500 cursor-pointer hover:text-amber-200"
+                      onClick={() =>
+                        navigator.clipboard.writeText(data.creator)
+                      }
+                    />
                   </div>
                   <div className="w-full flex flex-row items-center justify-start">
-                    <span className="text-cyan-400 pr-1.5">Order ID:</span>
+                    <span className="text-cyan-400 pr-1.5">id:</span>
                     <span>
                       {data.orderId.slice(0, 10) +
                         '...' +
                         data.orderId.slice(-10)}
                     </span>
+                    <FaRegCopy
+                      className="pl-2 text-xl text-amber-500 cursor-pointer hover:text-amber-200"
+                      onClick={() =>
+                        navigator.clipboard.writeText(data.orderId)
+                      }
+                    />
                   </div>
                   <div className="w-full flex flex-row items-center justify-start">
                     <span className="text-cyan-400 pr-1.5">
-                      Total Amount $GHO:
+                      total amount $GHO:
                     </span>
                     <span>{data.totalAmount}</span>
                   </div>
-                  <div className="w-full flex flex-row items-center justify-between py-1">
-                    <span className="text-sm text-cyan-400">Claim Status:</span>
+                  <div className="w-full flex flex-row items-center justify-start py-1">
+                    <span className="text-sm text-cyan-400 pr-1.5">
+                      claim status:
+                    </span>
                     <div className="border-1 border-gray-500 rounded-lg p-0.5 pl-2.5 pr-0">
                       {data.status.map((s, k) => (
                         <span
@@ -246,7 +265,7 @@ export default function Claim() {
               </div>
               <div className="px-2 py-1 flex flex-col w-full border-1 border-amber-500 rounded-xl">
                 <div className="w-full flex flex-row items-center justify-between">
-                  <span className="text-amber-500">Created at:</span>
+                  <span className="text-amber-500">created at:</span>
                   <span className="text-cyan-500 font-bold tracking-wider">
                     {new Date(data.createdAt).toLocaleString()}
                   </span>
@@ -260,12 +279,12 @@ export default function Claim() {
                     (data.deadline - data.createdAt)
                   }
                   classNames={{
-                    indicator: 'bg-gradient-to-r from-red-500 to-pink-500',
+                    indicator: 'bg-gradient-to-r from-red-500 to-amber-500',
                   }}
                   className="py-1"
                 />
                 <div className="w-full flex flex-row items-center justify-between">
-                  <span className="text-amber-500">Expires on: </span>
+                  <span className="text-amber-500">expires on: </span>
                   <span className="text-red-500 font-bold tracking-wider">
                     {new Date(data.deadline).toLocaleString()}
                   </span>
@@ -273,27 +292,33 @@ export default function Claim() {
                 </div>
               </div>
               <div className="w-full flex flex-col border-1 border-green-500 rounded-xl items-start justify-center">
-                <div className="w-full flex flex-row items-center justify-start border-b-1 border-green-400">
-                  <span className="text-xl px-2 mr-3 text-cyan-400 border-r-1 border-green-400">{`#${data.ticketIndex < 10 ? '0' : ''}${data.ticketIndex}`}</span>
-                  <span className="text-lg font-bold text-green-500 w-full pr-14">
+                <div className="w-full flex flex-row items-center justify-start text-lg border-b-1 border-green-400">
+                  <span className="px-2 mr-3 text-cyan-400 border-r-1 border-green-400">{`#${data.ticketIndex < 10 ? '0' : ''}${data.ticketIndex}`}</span>
+                  <span className="font-bold text-green-500 w-full pr-14">
                     YOUR TICKET
                   </span>
                 </div>
-                <div className="w-full flex flex-col px-2 py-1 items-start justify-center">
+                <div className="w-full flex flex-col px-2 py-1 items-start justify-center text-sm">
                   <div className="w-full flex flex-row items-center justify-start">
-                    <span className="text-cyan-400 pr-1.5">ID:</span>
+                    <span className="text-cyan-400 pr-1.5">id:</span>
                     <span>
                       {data.ticketId.slice(0, 10) +
                         '...' +
                         data.ticketId.slice(-10)}
                     </span>
+                    <FaRegCopy
+                      className="pl-2 text-xl text-amber-500 cursor-pointer hover:text-amber-200"
+                      onClick={() =>
+                        navigator.clipboard.writeText(data.ticketId)
+                      }
+                    />
                   </div>
                   <div className="w-full flex flex-row items-center justify-start">
-                    <span className="text-cyan-400 pr-1.5">Amount $GHO:</span>
+                    <span className="text-cyan-400 pr-1.5">amount $GHO:</span>
                     <span>{data.amount}</span>
                   </div>
                   <div className="w-full flex flex-row items-center justify-start">
-                    <span className="text-cyan-400 pr-1.5">Stream:</span>
+                    <span className="text-cyan-400 pr-1.5">stream:</span>
                     <span
                       className={
                         data.streamed ? 'text-green-500' : 'text-amber-500'
