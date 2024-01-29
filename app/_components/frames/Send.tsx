@@ -29,6 +29,7 @@ import {
   ModalContent,
   ModalBody,
   ModalHeader,
+  ModalFooter,
   useDisclosure,
   Button,
 } from '@nextui-org/react'
@@ -544,7 +545,14 @@ export default function Send() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-center justify-center h-full w-full text-sm p-2 font-mono break-words overflow-hidden">
+            <div
+              className={cn(
+                'flex flex-col items-center h-full w-full text-sm p-2 font-mono break-words overflow-hidden',
+                !steps.executed
+                  ? 'mt-2 sm:mt-0 sm:justify-center'
+                  : 'justify-center'
+              )}
+            >
               {!steps.executed ? (
                 <>
                   <FaPrint className="text-6xl mb-4" />
@@ -574,7 +582,7 @@ export default function Send() {
                         )
                         .join('\n')}
                       classNames={{
-                        base: 'w-52 py-0 pl-4 pr-1 border-small border-green-400',
+                        base: 'w-52 pl-3 pr-1 py-0 gap-0 border-small  border-green-400',
                         copyButton: 'text-cyan-300 pb-0.5',
                       }}
                     >
@@ -665,17 +673,8 @@ export default function Send() {
                       <ModalContent>
                         {() => (
                           <>
-                            <ModalHeader className="flex flex-row p-3 pr-10 items-center">
-                              <Pagination
-                                loop
-                                showControls
-                                isCompact
-                                size="sm"
-                                color="success"
-                                total={data.nbTickets}
-                                page={currentTicket}
-                                onChange={setCurrentTicket}
-                              />
+                            <ModalHeader className="flex flex-row py-1.5 pl-4 pr-10 items-center">
+                              <span className="text-xl text-cyan-300">{`#${currentTicket < 10 ? '0' : ''}${currentTicket}`}</span>
                             </ModalHeader>
                             <ModalBody className="bg-white p-3">
                               <QrSvg
@@ -688,6 +687,18 @@ export default function Send() {
                                 margin={1}
                               />
                             </ModalBody>
+                            <ModalFooter className="flex flex-row p-2 items-center justify-center">
+                              <Pagination
+                                loop
+                                showControls
+                                isCompact
+                                size="sm"
+                                color="success"
+                                total={data.nbTickets}
+                                page={currentTicket}
+                                onChange={setCurrentTicket}
+                              />
+                            </ModalFooter>
                           </>
                         )}
                       </ModalContent>

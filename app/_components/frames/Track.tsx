@@ -1,29 +1,19 @@
 'use client'
-import { useEffect } from 'react'
+//import { useEffect } from 'react'
 import { cn } from '@utils/tw'
-import { useModal } from 'connectkit'
-import { useChainId, useAccount, useContractRead } from 'wagmi'
-import load from '@contracts/loader'
-import { useTransact } from '@components/hooks/Transact'
-import WrongChain from '@components/elements/WrongChain'
-import PleaseConnect from '@components/elements/PleaseConnect'
+//import { useChainId } from 'wagmi'
+//import load from '@contracts/loader'
+//import { useTransact } from '@components/hooks/Transact'
 import Title from '@components/elements/Title'
 import { FaMagnifyingGlass, FaWandMagicSparkles } from 'react-icons/fa6'
-import { useParams } from 'react-router-dom'
+//import { useParams } from 'react-router-dom'
 
 export default function Track() {
-  const { addr } = useParams()
-  const { isConnected, address } = useAccount()
-  const { setOpen, openSwitchNetworks } = useModal()
-  const chainId = useChainId()
-  const contract = load('QRFlow', chainId)
+  //const { addr } = useParams()
+  //const { isConnected, address } = useAccount()
+  //const chainId = useChainId()
+  //const contract = load('QRFlow', chainId)
   //const [isLoading, setIsLoading] = useState(false)
-  useEffect(() => {
-    if (isConnected && !contract) openSwitchNetworks()
-  }, [isConnected && chainId])
-  useEffect(() => {
-    if (!isConnected) setOpen(true)
-  }, [])
   return (
     <>
       <Title
@@ -35,18 +25,12 @@ export default function Track() {
           'flex flex-col h-full w-full min-w-[320px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl'
         )}
       >
-        {!isConnected ? (
-          <PleaseConnect />
-        ) : !contract ? (
-          <WrongChain />
-        ) : (
-          <div className="flex flex-col items-center justify-center w-full h-full mb-10">
-            <FaWandMagicSparkles className="mb-4 text-6xl" />
-            <span className="text-xl font-bold w-48 text-center">
-              Not Ready Yet
-            </span>
-          </div>
-        )}
+        <div className="flex flex-col items-center justify-center w-full h-full mb-10">
+          <FaWandMagicSparkles className="mb-4 text-6xl" />
+          <span className="text-xl font-bold w-48 text-center">
+            Not Ready Yet
+          </span>
+        </div>
       </div>
     </>
   )
