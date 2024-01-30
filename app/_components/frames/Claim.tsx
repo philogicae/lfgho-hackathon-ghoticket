@@ -161,7 +161,6 @@ export default function Claim() {
     contract,
     method: 'reserveTicket',
     args: steps.tx1,
-    ignoreError: true,
   })
   const {
     sendTx: sendTx2,
@@ -178,6 +177,7 @@ export default function Claim() {
     isConnected &&
     ticket.chainId === selectedChainId &&
     steps.check1.length > 0 &&
+    seconds < 1 &&
     !reserved &&
     wss
       ?.readContract({
@@ -252,7 +252,7 @@ export default function Claim() {
             <FaLink className="text-2xl" />
           ) : !isSuccessTx1 && !reserved ? (
             <FaFileSignature className="ml-2" />
-          ) : seconds > 1 ? (
+          ) : seconds > 0 ? (
             <span className="text-xl">{seconds}</span>
           ) : !isSuccessTx2 ? (
             <FaArrowRightToBracket className="rotate-90 ml-0.5" />
@@ -261,7 +261,7 @@ export default function Claim() {
           )
         }
         loading={isLoadingTx1 || isLoadingTx2}
-        ready={data.amount > 0 && !isSuccessTx2 && seconds <= 0}
+        ready={data.amount > 0 && seconds < 1 && !isSuccessTx2}
         onClick={submit}
       />
       <div
@@ -314,7 +314,7 @@ export default function Claim() {
               <FaArrowRightLong className="h-5 w-5 p-1" />
               <span
                 className={cn(
-                  seconds <= 0 && (isSuccessTx1 || reserved)
+                  (isSuccessTx1 || reserved) && seconds < 1 && !isSuccessTx2
                     ? 'animate-pulse text-orange-400 font-bold'
                     : isSuccessTx2
                       ? 'text-green-400'
