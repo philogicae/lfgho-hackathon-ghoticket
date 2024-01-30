@@ -1,6 +1,7 @@
 'use client'
 import { Image } from '@nextui-org/react'
 import { ConnectKitButton } from 'connectkit'
+import PleaseTurnScreen from '@components/elements/PleaseTurnScreen'
 import {
   FaQrcode,
   FaEthereum,
@@ -8,12 +9,21 @@ import {
   FaGithub,
   FaXTwitter,
 } from 'react-icons/fa6'
+import { useEffect, useRef, useState } from 'react'
 
 export default function Navbar({ children }: { children: React.ReactNode }) {
+  const layout = useRef<HTMLDivElement>(null)
+  const [display, setDisplay] = useState<boolean>(true)
+  useEffect(() => {
+    const updatedHeight = () => setDisplay(layout.current!.offsetHeight > 550)
+    updatedHeight()
+    return () => window.removeEventListener('resize', updatedHeight)
+  }, [])
   return (
     <div
       className="absolute flex flex-col w-full h-full items-center justify-center"
       id="layout"
+      ref={layout}
     >
       <div className="flex flex-col w-full h-full items-center justify-start">
         <div
@@ -43,7 +53,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="flex flex-col w-full h-full items-start justify-center pt-8 sm:pt-0 px-2">
-          {children}
+          {!display ? <PleaseTurnScreen /> : children}
         </div>
         <div className="flex flex-row w-full h-9 items-center justify-between p-2 text-sm font-mono text-[#1938fc]">
           <a
