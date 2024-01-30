@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { WagmiConfig, createConfig } from 'wagmi'
+import { WagmiConfig, configureChains, createConfig } from 'wagmi'
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import { sepolia, mainnet } from 'wagmi/chains'
+import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 import Loading from '@components/frames/Loading'
 
 const url = 'https://qrflow.xyz'
@@ -14,12 +15,48 @@ if (!process.env.NEXT_PUBLIC_WALLETCONNECT_ID) {
 /* if (!process.env.NEXT_PUBLIC_INFURA_ID) {
   throw new Error('You need to provide NEXT_PUBLIC_INFURA_ID env variable')
 } */
+/* if (!process.env.NEXT_PUBLIC_ALCHEMY_ID) {
+  throw new Error('You need to provide NEXT_PUBLIC_ALCHEMY_ID env variable')
+} */
+if (!process.env.NEXT_PUBLIC_BLASTAPI_ID) {
+  throw new Error('You need to provide NEXT_PUBLIC_BLASTAPI_ID env variable')
+}
+
+const { chains, publicClient, webSocketPublicClient } = configureChains(
+  [sepolia, mainnet],
+  [
+    jsonRpcProvider({
+      rpc: (chain) =>
+        chain.name === 'Sepolia'
+          ? {
+              http:
+                'https://eth-sepolia.blastapi.io/' +
+                process.env.NEXT_PUBLIC_BLASTAPI_ID,
+              webSocket:
+                'wss://eth-sepolia.blastapi.io/' +
+                process.env.NEXT_PUBLIC_BLASTAPI_ID,
+            }
+          : {
+              http:
+                'https://eth-mainnet.blastapi.io/' +
+                process.env.NEXT_PUBLIC_BLASTAPI_ID,
+              webSocket:
+                'wss://eth-mainnet.blastapi.io/' +
+                process.env.NEXT_PUBLIC_BLASTAPI_ID,
+            },
+    }),
+  ]
+)
 
 const config = createConfig(
   getDefaultConfig({
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_ID,
     //infuraId: process.env.NEXT_PUBLIC_INFURA_ID,
-    chains: [sepolia, mainnet],
+    //alchemyId: process.env.NEXT_PUBLIC_ALCHEMY_ID,
+    chains,
+    publicClient,
+    webSocketPublicClient,
+    enableWebSocketPublicClient: true,
     appName: 'QR Flow',
     appDescription:
       'Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!',

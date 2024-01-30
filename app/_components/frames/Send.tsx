@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { cn } from '@utils/tw'
 import { useModal } from 'connectkit'
-import { useChainId, useAccount, useContractReads } from 'wagmi'
+import { useChainId, useAccount, useWebSocketPublicClient } from 'wagmi'
 import load from '@contracts/loader'
 import { generateTicketPermit, generateGhoPermit } from '@utils/permits'
 import { useSigner } from '@components/hooks/Signer'
@@ -102,53 +102,63 @@ export default function Send() {
       args: steps.tx3,
     })
   const isLoading = isLoadingSign || isLoadingTx
-  const { data: initReads } = useContractReads(
-    isConnected
-      ? {
-          contracts: [
-            {
-              ...gho,
-              functionName: 'decimals',
-            },
-            {
-              ...gho,
-              functionName: 'balanceOf',
-              args: [address!],
-            },
-            {
-              ...gho,
-              functionName: 'nonces',
-              args: [address!],
-            },
-            {
-              ...contract,
-              functionName: 'getAccountNonce',
-              args: [address!],
-            },
-          ],
-          watch: true,
-          enabled: true,
-        }
-      : { enabled: false }
-  )
-  let DECIMALS: number,
-    MAX: any,
-    NONCE_GHO: bigint,
-    NONCE_QRFLOW: bigint,
+  const wss = useWebSocketPublicClient({ chainId })
+  const [initData, setInitData] = useState<{
+    DECIMALS: number
+    MAX: number
+    NONCE_GHO: bigint
+    NONCE_QRFLOW: bigint
     updatedOrderId: Hex
-  if (initReads) {
-    DECIMALS = initReads![0].result as number
-    MAX =
-      Number(
-        (initReads![1].result as bigint) / BigInt(10 ** (DECIMALS - PRECISION))
-      ) /
-      10 ** PRECISION
-    NONCE_GHO = initReads![2].result as bigint
-    NONCE_QRFLOW = initReads![3].result as bigint
-    updatedOrderId = keccak256(
-      encodePacked(['address', 'uint256'], [address!, NONCE_QRFLOW])
-    )
-  }
+  }>({
+    DECIMALS: 0,
+    MAX: 0,
+    NONCE_GHO: BigInt(0),
+    NONCE_QRFLOW: BigInt(0),
+    updatedOrderId: '0x0',
+  })
+  isConnected &&
+    initData.DECIMALS === 0 &&
+    wss
+      ?.multicall({
+        contracts: [
+          {
+            ...gho!,
+            functionName: 'decimals',
+          },
+          {
+            ...gho!,
+            functionName: 'balanceOf',
+            args: [address!],
+          },
+          {
+            ...gho!,
+            functionName: 'nonces',
+            args: [address!],
+          },
+          {
+            ...contract!,
+            functionName: 'getAccountNonce',
+            args: [address!],
+          },
+        ],
+      })
+      .then((res) => {
+        const DECIMALS = res![0].result as number
+        const NONCE_QRFLOW = res![3].result as bigint
+        setInitData({
+          DECIMALS: DECIMALS,
+          MAX:
+            Number(
+              (res![1].result as bigint) / BigInt(10 ** (DECIMALS - PRECISION))
+            ) /
+            10 ** PRECISION,
+          NONCE_GHO: res![2].result as bigint,
+          NONCE_QRFLOW: NONCE_QRFLOW,
+          updatedOrderId: keccak256(
+            encodePacked(['address', 'uint256'], [address!, NONCE_QRFLOW])
+          ),
+        })
+      })
   const [hdm, setHdm] = useState({ hours: 0, days: 0, months: 0 })
   const [data, setData] = useState<{
     amount: any
@@ -172,7 +182,9 @@ export default function Send() {
     let value = e.target.value
     if (e.target.name === 'amount') {
       value = value.replace(',', '.')
-      value = floatRegex.test(value) ? restrict(value, 0, MAX) : data.amount
+      value = floatRegex.test(value)
+        ? restrict(value, 0, initData.MAX)
+        : data.amount
     } else if (e.target.name === 'nbTickets') {
       value = restrict(Math.round(Number(value)), 0, 10)
     }
@@ -205,9 +217,9 @@ export default function Send() {
     if (steps.ready1 && !steps.ready2) {
       const tempAmount =
         BigInt(Number(data.amount * 10 ** PRECISION)) *
-        BigInt(10 ** (DECIMALS - PRECISION))
+        BigInt(10 ** (initData.DECIMALS - PRECISION))
       order.current.amount = tempAmount - (tempAmount % BigInt(data.nbTickets))
-      order.current.id = updatedOrderId
+      order.current.id = initData.updatedOrderId
       signRequest({
         args: generateTicketPermit({
           chainId: chainId,
@@ -229,7 +241,7 @@ export default function Send() {
           owner: address!,
           spender: contract!.address!,
           value: order.current.amount,
-          nonce: NONCE_GHO,
+          nonce: initData.NONCE_GHO,
           deadline: order.current.signDeadline,
         }),
         index: 2,
@@ -256,7 +268,7 @@ export default function Send() {
         ...steps,
         ready1:
           Number(data.amount) > 0 &&
-          Number(data.amount) <= MAX &&
+          Number(data.amount) <= initData.MAX &&
           data.nbTickets > 0 &&
           data.nbTickets <= 10 &&
           hdm.months + hdm.days + hdm.hours > 0,
@@ -417,7 +429,7 @@ export default function Send() {
                         className="text-xs text-amber-600 font-mono font-semibold tracking-widest cursor-pointer"
                         tabIndex={-1}
                         onClick={() =>
-                          setData({ ...data, amount: MAX.toString() })
+                          setData({ ...data, amount: initData.MAX.toString() })
                         }
                       >
                         MAX

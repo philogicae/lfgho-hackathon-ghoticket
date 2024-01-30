@@ -82,7 +82,7 @@ export default function RootLayout({
       window.location.reload()
     }
   }
-  const csp = `default-src 'self' api.web3modal.com *.walletconnect.com *.walletconnect.org wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org/rpc *.infura.io rpc.sepolia.org cloudflare-eth.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' * blob: data:; script-src 'self' *.vercel-scripts.com 'unsafe-eval' 'unsafe-inline'`
+  const csp = `default-src 'self' api.web3modal.com *.walletconnect.com *.walletconnect.org wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org/rpc *.infura.io rpc.sepolia.org cloudflare-eth.com https://eth-mainnet.blastapi.io https://eth-sepolia.blastapi.io wss://eth-mainnet.blastapi.io wss://eth-sepolia.blastapi.io; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' * blob: data:; script-src 'self' *.vercel-scripts.com 'unsafe-eval' 'unsafe-inline'`
   return (
     <html lang="en" className={font.variable}>
       <head>
@@ -97,8 +97,12 @@ export default function RootLayout({
             </Navbar>
           </NextUI>
         </ConnectKit>
-        <Analytics />
-        <SpeedInsights />
+        {process.env.NEXT_PUBLIC_URL && (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
       </body>
     </html>
   )

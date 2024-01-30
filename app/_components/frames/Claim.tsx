@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { cn } from '@utils/tw'
-import { useContractReads } from 'wagmi'
+import { useWebSocketPublicClient } from 'wagmi'
 import load from '@contracts/loader'
 import Title from '@components/elements/Title'
 import {
@@ -70,61 +70,65 @@ export default function Claim() {
     if (decoded) setTicket(decoded)
     else setIsLoading(false)
   }
-  useContractReads({
-    contracts: [
-      {
-        chainId: ticket.chainId,
-        ...contract,
-        functionName: 'getFullOrder',
-        args: [ticket.content.orderId],
-      },
-      {
-        chainId: ticket.chainId,
-        ...contract,
-        functionName: 'isValid',
-        args: [ticket.content],
-      },
-    ],
-    enabled: ticket.chainId > 0 && isLoading,
-    onSuccess: (output) => {
-      const x = output![0].result as {
-        order: {
-          id: Hex
-          order: {
-            creator: Address
-            amount: bigint
-            createdAt: bigint
-            deadline: bigint
-            streamed: bigint
-            closed: bigint
-          }
-          nbTickets: bigint
-        }
-        status: { ticketIds: Hex[]; claimers: Address[] }
-      }
-      const y = output![1].result as [Hex, bigint, bigint]
-      const nbTickets = Number(x.order.nbTickets)
-      const status = x.status.claimers.map((c) => Number(c !== zeroAddress))
-      for (let i = 0; i < 10 - nbTickets; i++) {
-        status.push(-1)
-      }
-      setData({
-        orderId: x.order.id,
-        creator: x.order.order.creator,
-        totalAmount: Number(x.order.order.amount / BigInt(10 ** 10)) / 10 ** 8,
-        createdAt: Number(x.order.order.createdAt) * 1000,
-        deadline: Number(x.order.order.deadline) * 1000,
-        closed: Boolean(x.order.order.closed),
-        nbTickets: nbTickets,
-        status: status,
-        ticketIndex: x.status.ticketIds.indexOf(y[0]) + 1,
-        ticketId: y[0],
-        amount: Number(y[1] / BigInt(10 ** 10)) / 10 ** 8,
-        streamed: Boolean(y[2]),
+  const wss = useWebSocketPublicClient(
+    ticket.chainId > 0 ? { chainId: ticket.chainId } : {}
+  )
+  ticket.chainId > 0 &&
+    isLoading &&
+    wss
+      ?.multicall({
+        contracts: [
+          {
+            ...contract!,
+            functionName: 'getFullOrder',
+            args: [ticket.content.orderId],
+          },
+          {
+            ...contract!,
+            functionName: 'isValid',
+            args: [ticket.content],
+          },
+        ],
       })
-    },
-    onError: () => setIsLoading(false),
-  })
+      .then((res: any[]) => {
+        const x = res![0].result as {
+          order: {
+            id: Hex
+            order: {
+              creator: Address
+              amount: bigint
+              createdAt: bigint
+              deadline: bigint
+              streamed: bigint
+              closed: bigint
+            }
+            nbTickets: bigint
+          }
+          status: { ticketIds: Hex[]; claimers: Address[] }
+        }
+        const y = res![1].result as [Hex, bigint, bigint]
+        const nbTickets = Number(x.order.nbTickets)
+        const status = x.status.claimers.map((c) => Number(c !== zeroAddress))
+        for (let i = 0; i < 10 - nbTickets; i++) {
+          status.push(-1)
+        }
+        setData({
+          orderId: x.order.id,
+          creator: x.order.order.creator,
+          totalAmount:
+            Number(x.order.order.amount / BigInt(10 ** 10)) / 10 ** 8,
+          createdAt: Number(x.order.order.createdAt) * 1000,
+          deadline: Number(x.order.order.deadline) * 1000,
+          closed: Boolean(x.order.order.closed),
+          nbTickets: nbTickets,
+          status: status,
+          ticketIndex: x.status.ticketIds.indexOf(y[0]) + 1,
+          ticketId: y[0],
+          amount: Number(y[1] / BigInt(10 ** 10)) / 10 ** 8,
+          streamed: Boolean(y[2]),
+        })
+      })
+      .catch(() => setIsLoading(false))
   useEffect(() => {
     if (data.amount > 0) setIsLoading(false)
   }, [data])
@@ -318,13 +322,9 @@ export default function Claim() {
                     <span>{data.amount}</span>
                   </div>
                   <div className="w-full flex flex-row items-center justify-start">
-                    <span className="text-cyan-400 pr-1.5">stream:</span>
-                    <span
-                      className={
-                        data.streamed ? 'text-green-500' : 'text-amber-500'
-                      }
-                    >
-                      ●
+                    <span className="text-cyan-400 pr-0.5">stream:</span>
+                    <span className="text-xs pt-0.5">
+                      {data.streamed ? '🟢' : '🔴'}
                     </span>
                   </div>
                 </div>
