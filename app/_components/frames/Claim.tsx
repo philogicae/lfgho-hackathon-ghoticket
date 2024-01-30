@@ -1,8 +1,15 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { cn } from '@utils/tw'
-import { useWebSocketPublicClient } from 'wagmi'
+import { useChains, useModal } from 'connectkit'
+import {
+  useAccount,
+  useChainId,
+  useSwitchNetwork,
+  useWebSocketPublicClient,
+} from 'wagmi'
 import load from '@contracts/loader'
+import { useTransact } from '@components/hooks/Transact'
 import Title from '@components/elements/Title'
 import {
   FaRegMoneyBill1,
@@ -12,10 +19,15 @@ import {
   FaQrcode,
   FaArrowRightLong,
   FaRegCopy,
+  FaWallet,
+  FaLink,
+  FaFileSignature,
+  FaArrowRightToBracket,
+  FaRegCircleCheck,
 } from 'react-icons/fa6'
 import { useParams } from 'react-router-dom'
 import { extractFromTicketHash } from '@utils/packing'
-import { Hex, Address, zeroAddress } from 'viem'
+import { Hex, Address, zeroAddress, keccak256, encodePacked } from 'viem'
 import { Progress } from '@nextui-org/react'
 
 export default function Claim() {
@@ -23,19 +35,22 @@ export default function Claim() {
   const [ticket, setTicket] = useState({
     chainId: 0,
     content: {
-      orderId: '',
-      orderSecret: '',
-      ticketSecret: '',
+      orderId: '' as Hex,
+      orderSecret: '' as Hex,
+      ticketSecret: '' as Hex,
       signature: {
         v: BigInt(0),
-        r: '' as `0x${string}`,
-        s: '' as `0x${string}`,
+        r: '' as Hex,
+        s: '' as Hex,
       },
     },
   })
-  //const { isConnected } = useAccount()
-  //const { setOpen, openSwitchNetworks } = useModal()
-  //const selectedChainId = useChainId()
+  const chains = useChains()
+  const chainName = chains.find((chain) => chain.id === ticket.chainId)?.name
+  const { isConnected, address } = useAccount()
+  const { setOpen } = useModal()
+  const { switchNetwork } = useSwitchNetwork()
+  const selectedChainId = useChainId()
   const contract = load('QRFlow', ticket.chainId)
   const [data, setData] = useState<{
     orderId: Hex
@@ -64,17 +79,17 @@ export default function Claim() {
     amount: 0,
     streamed: false,
   })
-  const [isLoading, setIsLoading] = useState(true)
+  const [loadingTicket, setLoadingTicket] = useState(true)
   const decodeTicket = async (ticketCode: string) => {
     const decoded = await extractFromTicketHash(ticketCode)
     if (decoded) setTicket(decoded)
-    else setIsLoading(false)
+    else setLoadingTicket(false)
   }
   const wss = useWebSocketPublicClient(
     ticket.chainId > 0 ? { chainId: ticket.chainId } : {}
   )
   ticket.chainId > 0 &&
-    isLoading &&
+    loadingTicket &&
     wss
       ?.multicall({
         contracts: [
@@ -128,10 +143,99 @@ export default function Claim() {
           streamed: Boolean(y[2]),
         })
       })
-      .catch(() => setIsLoading(false))
+      .catch(() => setLoadingTicket(false))
+  const [steps, setSteps] = useState({
+    check1: [] as any,
+    tx1: [] as any,
+    tx2: [] as any,
+  })
+  const [reserved, setReserved] = useState(false)
+  const [seconds, setSeconds] = useState(0)
+  const {
+    sendTx: sendTx1,
+    isReadyTx: isReadyTx1,
+    isLoadingTx: isLoadingTx1,
+    isSuccessTx: isSuccessTx1,
+  } = useTransact({
+    chainId: ticket.chainId,
+    contract,
+    method: 'reserveTicket',
+    args: steps.tx1,
+    ignoreError: true,
+  })
+  const {
+    sendTx: sendTx2,
+    isReadyTx: isReadyTx2,
+    isLoadingTx: isLoadingTx2,
+    isSuccessTx: isSuccessTx2,
+  } = useTransact({
+    chainId: ticket.chainId,
+    contract,
+    method: 'claimTicket',
+    args: steps.tx2,
+  })
+  data.amount > 0 &&
+    isConnected &&
+    ticket.chainId === selectedChainId &&
+    steps.check1.length > 0 &&
+    !reserved &&
+    wss
+      ?.readContract({
+        ...contract!,
+        functionName: 'getReservation',
+        args: steps.check1,
+      })
+      .then((res) => {
+        const unlock = Number(res) * 1000
+        const now = new Date().getTime()
+        if (unlock > now) setSeconds(Math.floor((unlock - now) / 1000) + 5)
+        else if (unlock > 0) setReserved(true)
+        else
+          setSteps({
+            ...steps,
+            tx1: steps.check1,
+          })
+      })
+  const submit = () => {
+    if (!isConnected) setOpen(true)
+    else if (ticket.chainId !== selectedChainId) switchNetwork!(ticket.chainId)
+    else if (isReadyTx1 && !isSuccessTx1 && !reserved) sendTx1({ index: 1 })
+    else if (isReadyTx2 && !isSuccessTx2) sendTx2({ index: 2 })
+  }
   useEffect(() => {
-    if (data.amount > 0) setIsLoading(false)
-  }, [data])
+    if (seconds > 0 && !reserved) {
+      setReserved(true)
+      const timer = setInterval(() => {
+        setSeconds((prev) => prev - 1)
+        if (seconds <= 1) clearInterval(timer)
+      }, 1000)
+    } else if (seconds < 1 && reserved && steps.tx2.length === 0)
+      setSteps({
+        ...steps,
+        tx2: [ticket.content],
+      })
+  }, [seconds, reserved])
+  useEffect(() => {
+    if (data.amount > 0) {
+      setLoadingTicket(false)
+      if (address)
+        setSteps({
+          ...steps,
+          check1: [
+            keccak256(
+              encodePacked(
+                ['address', 'bytes32', 'bytes32'],
+                [
+                  address!,
+                  ticket.content.orderSecret,
+                  ticket.content.ticketSecret,
+                ]
+              )
+            ),
+          ],
+        })
+    }
+  }, [data, address])
   useEffect(() => {
     if (ticketCode) decodeTicket(ticketCode)
   }, [ticketCode])
@@ -139,7 +243,26 @@ export default function Claim() {
     <>
       <Title
         label="Claim Ticket"
-        logo={<FaRegMoneyBill1 className="text-3xl" />}
+        logo={
+          data.amount === 0 ? (
+            <FaRegMoneyBill1 className="text-3xl" />
+          ) : !isConnected ? (
+            <FaWallet />
+          ) : ticket.chainId !== selectedChainId ? (
+            <FaLink className="text-2xl" />
+          ) : !isSuccessTx1 && !reserved ? (
+            <FaFileSignature className="ml-2" />
+          ) : seconds > 1 ? (
+            <span className="text-xl">{seconds}</span>
+          ) : !isSuccessTx2 ? (
+            <FaArrowRightToBracket className="rotate-90 ml-0.5" />
+          ) : (
+            <FaRegCircleCheck className="text-green-500 text-xl" />
+          )
+        }
+        loading={isLoadingTx1 || isLoadingTx2}
+        ready={data.amount > 0 && !isSuccessTx2 && seconds <= 0}
+        onClick={submit}
       />
       <div
         className={cn(
@@ -154,7 +277,7 @@ export default function Claim() {
               Only accessible via a link or by scanning a QR code
             </span>
           </div>
-        ) : isLoading ? (
+        ) : loadingTicket ? (
           <div className="flex flex-col items-center justify-center w-full h-full mb-10">
             <FaCircleNotch className="mb-4 text-6xl animate-spin" />
             <span className="text-xl font-bold w-44 text-center">
@@ -174,9 +297,14 @@ export default function Claim() {
               <div />
               <span
                 className={cn(
-                  false
+                  data.amount > 0 &&
+                    isConnected &&
+                    ticket.chainId === selectedChainId &&
+                    isReadyTx1 &&
+                    !isSuccessTx1 &&
+                    !reserved
                     ? 'animate-pulse text-orange-400 font-bold'
-                    : false
+                    : isSuccessTx1 || reserved
                       ? 'text-green-400'
                       : ''
                 )}
@@ -186,9 +314,9 @@ export default function Claim() {
               <FaArrowRightLong className="h-5 w-5 p-1" />
               <span
                 className={cn(
-                  false
+                  seconds <= 0 && (isSuccessTx1 || reserved)
                     ? 'animate-pulse text-orange-400 font-bold'
-                    : false
+                    : isSuccessTx2
                       ? 'text-green-400'
                       : ''
                 )}
@@ -197,18 +325,29 @@ export default function Claim() {
               </span>
               <div />
             </div>
-            <div className="w-full flex flex-row items-center justify-between text-3xl font-bold text-green-500 p-2 pb-1">
+            <div className="w-full flex flex-row items-center justify-between text-3xl font-bold text-green-500 p-2 pb-0">
               <FaQrcode />
               <span>VALID TICKET</span>
               <FaQrcode />
             </div>
-            <div className="h-full flex flex-col text-sm items-center justify-between text-center font-mono break-words px-3 py-1">
+            <div className="h-full flex flex-col text-sm items-center justify-between text-center font-mono break-words px-3 pb-1">
+              {isSuccessTx2 && (
+                <span className="absolute text-6xl font-sans font-extrabold text-white bg-red-800 border-2 border-white px-3 rounded-xl -rotate-45 top-1/2 z-40">
+                  CLAIMED
+                </span>
+              )}
               <div />
               <div className="w-full flex flex-col border-1 border-blue-500 rounded-xl items-start justify-center">
                 <span className="w-full text-lg font-bold text-blue-500 border-b-1 border-blue-500">
                   ORIGINAL ORDER
                 </span>
                 <div className="w-full flex flex-col px-2 py-1 items-start justify-center text-sm">
+                  <div className="w-full flex flex-row items-center justify-start">
+                    <span className="text-cyan-400 pr-1.5">chain:</span>
+                    <span className="font-bold text-amber-500 tracking-wide">
+                      {chainName}
+                    </span>
+                  </div>
                   <div className="w-full flex flex-row items-center justify-start">
                     <span className="text-cyan-400 pr-1.5">from:</span>
                     <span>
@@ -322,7 +461,7 @@ export default function Claim() {
                     <span>{data.amount}</span>
                   </div>
                   <div className="w-full flex flex-row items-center justify-start">
-                    <span className="text-cyan-400 pr-0.5">stream:</span>
+                    <span className="text-cyan-400 pr-1.5">stream:</span>
                     <span className="text-xs pt-0.5">
                       {data.streamed ? '🟢' : '🔴'}
                     </span>

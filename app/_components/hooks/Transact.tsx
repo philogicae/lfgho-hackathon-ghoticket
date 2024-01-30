@@ -16,6 +16,7 @@ type TransactProps = {
   args?: any
   onSuccess?: () => void
   onError?: () => void
+  ignoreError?: boolean
 }
 
 const useTransact = ({
@@ -25,6 +26,7 @@ const useTransact = ({
   args,
   onSuccess,
   onError,
+  ignoreError = false,
 }: TransactProps) => {
   const chains = useChains()
   const blockExplorer = chains.find((chain) => chain.id === chainId)
@@ -41,10 +43,12 @@ const useTransact = ({
     args: args,
     enabled: args.length > 0 && !executed.current,
     onError: () => {
-      addSnackbar({
-        type: 'error',
-        text: (id.current ? `${id.current}. ` : '') + 'Tx error',
-      })
+      if (!ignoreError)
+        addSnackbar({
+          type: 'error',
+          text: (id.current ? `${id.current}. ` : '') + 'Tx error',
+        })
+      onError && onError()
     },
   })
   const {
@@ -118,7 +122,7 @@ const useTransact = ({
         onError && onError()
       })
     },
-    tx: receipt ?? tx,
+    receipt,
     isReadyTx: isPrepareSuccess,
     isLoadingTx: isPreLoading || isPostLoading,
     isSuccessTx: isPreSuccess && isPostSuccess,
