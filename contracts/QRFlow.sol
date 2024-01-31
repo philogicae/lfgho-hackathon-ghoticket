@@ -14,8 +14,7 @@ contract QRFlow is Context, EIP712 {
     keccak256(
       'TicketPermit(address creator,bytes32 orderId,bytes32 orderSecret)'
     );
-  ERC20Permit public constant GHO =
-    ERC20Permit(0xc4bF5CbDaBE595361438F8c6a187bDc330539c60);
+  ERC20Permit public immutable GHO;
 
   struct Account {
     uint256 nonce;
@@ -108,7 +107,9 @@ contract QRFlow is Context, EIP712 {
   error TicketExpired(bytes32 orderId, bytes32 ticketId, uint256 deadline);
   error InvalidSigner(address creator, address signer);
 
-  constructor() EIP712('QR Flow', '1') {}
+  constructor(address gho) EIP712('QR Flow', '1') {
+    GHO = ERC20Permit(gho);
+  }
 
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparatorV4();
@@ -167,8 +168,9 @@ contract QRFlow is Context, EIP712 {
     Order memory order = _orders[orderId];
     if (
       order.creator != creator ||
-      order.deadline > block.timestamp ||
-      order.closed > 0
+      order.closed > 0 ||
+      (order.createdAt + 3 * 60 < block.timestamp &&
+        block.timestamp < order.deadline)
     ) {
       revert InvalidWithdraw(orderId);
     }

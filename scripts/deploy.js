@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const { ethers } = require('hardhat')
 const fs = require('fs')
 const path = require('path')
@@ -38,13 +39,7 @@ async function Deployer(contractName, ...args) {
     (await ethers.provider.getNetwork()).chainId,
     contract.target
   )
+  return contract.target
 }
 
-async function main() {
-  await Deployer('QRFlow')
-}
-
-main().catch((error) => {
-  console.error(error)
-  process.exitCode = 1
-})
+exports.Deployer = Deployer
