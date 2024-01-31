@@ -30,21 +30,42 @@ import { extractFromTicketHash } from '@utils/packing'
 import { Hex, Address, zeroAddress, keccak256, encodePacked } from 'viem'
 import { Progress } from '@nextui-org/react'
 
+const blankTicket = {
+  chainId: 0,
+  content: {
+    orderId: '' as Hex,
+    orderSecret: '' as Hex,
+    ticketSecret: '' as Hex,
+    signature: {
+      v: BigInt(0),
+      r: '' as Hex,
+      s: '' as Hex,
+    },
+  },
+}
+const blankData = {
+  orderId: '' as Hex,
+  creator: '' as Address,
+  totalAmount: 0,
+  createdAt: 0,
+  deadline: 0,
+  closed: false,
+  nbTickets: 0,
+  status: [],
+  ticketIndex: 0,
+  ticketId: '' as Hex,
+  amount: 0,
+  streamed: false,
+}
+const blankSteps = {
+  check1: [] as any,
+  tx1: [] as any,
+  tx2: [] as any,
+}
+
 export default function Claim() {
   const { ticketCode } = useParams()
-  const [ticket, setTicket] = useState({
-    chainId: 0,
-    content: {
-      orderId: '' as Hex,
-      orderSecret: '' as Hex,
-      ticketSecret: '' as Hex,
-      signature: {
-        v: BigInt(0),
-        r: '' as Hex,
-        s: '' as Hex,
-      },
-    },
-  })
+  const [ticket, setTicket] = useState(blankTicket)
   const chains = useChains()
   const chainName = chains.find((chain) => chain.id === ticket.chainId)?.name
   const { isConnected, address } = useAccount()
@@ -65,20 +86,7 @@ export default function Claim() {
     ticketId: Hex
     amount: number
     streamed: boolean
-  }>({
-    orderId: '0x0',
-    creator: '0x0',
-    totalAmount: 0,
-    createdAt: 0,
-    deadline: 0,
-    closed: false,
-    nbTickets: 0,
-    status: [],
-    ticketIndex: 0,
-    ticketId: '0x0',
-    amount: 0,
-    streamed: false,
-  })
+  }>(blankData)
   const [loadingTicket, setLoadingTicket] = useState(true)
   const decodeTicket = async (ticketCode: string) => {
     const decoded = await extractFromTicketHash(ticketCode)
@@ -144,11 +152,7 @@ export default function Claim() {
         })
       })
       .catch(() => setLoadingTicket(false))
-  const [steps, setSteps] = useState({
-    check1: [] as any,
-    tx1: [] as any,
-    tx2: [] as any,
-  })
+  const [steps, setSteps] = useState(blankSteps)
   const [reserved, setReserved] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const {
@@ -161,6 +165,7 @@ export default function Claim() {
     contract,
     method: 'reserveTicket',
     args: steps.tx1,
+    ignoreError: true,
   })
   const {
     sendTx: sendTx2,
@@ -172,6 +177,7 @@ export default function Claim() {
     contract,
     method: 'claimTicket',
     args: steps.tx2,
+    ignoreError: true,
   })
   data.amount > 0 &&
     isConnected &&
@@ -201,6 +207,14 @@ export default function Claim() {
     else if (ticket.chainId !== selectedChainId) switchNetwork!(ticket.chainId)
     else if (isReadyTx1 && !isSuccessTx1 && !reserved) sendTx1({ index: 1 })
     else if (isReadyTx2 && !isSuccessTx2) sendTx2({ index: 2 })
+  }
+  const reset = () => {
+    //setTicket(blankTicket)
+    //setData(blankData)
+    //setLoadingTicket(true)
+    setSteps(blankSteps)
+    setReserved(false)
+    setSeconds(0)
   }
   useEffect(() => {
     if (seconds > 0 && !reserved) {
@@ -239,6 +253,7 @@ export default function Claim() {
   useEffect(() => {
     if (ticketCode) decodeTicket(ticketCode)
   }, [ticketCode])
+  useEffect(() => reset(), [address, selectedChainId])
   return (
     <>
       <Title

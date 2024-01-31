@@ -56,10 +56,52 @@ const PRECISION = 8
 const floatRegex = new RegExp(`^([0-9]+[.]?[0-9]{0,${PRECISION}})?$`)
 const generateHex = (): Hex => keccak256(toHex(nanoid(32)))
 const generateBatchHex = (): Hex[] => Array.from({ length: 10 }, generateHex)
-const generateTicketIds = (orderSecret: Hex, ticketSecrets: Hex[]): Hex[] =>
-  ticketSecrets.map((ticketSecret) =>
-    keccak256(encodePacked(['bytes32', 'bytes32'], [orderSecret, ticketSecret]))
-  )
+const generateTicketIds = (
+  orderSecret: Hex,
+  ticketSecrets: Hex[],
+  nb: number
+): Hex[] =>
+  ticketSecrets
+    .slice(0, nb)
+    .map((ticketSecret) =>
+      keccak256(
+        encodePacked(['bytes32', 'bytes32'], [orderSecret, ticketSecret])
+      )
+    )
+
+const blankSteps = {
+  ready1: false,
+  sign1: '' as Hex,
+  ready2: false,
+  sign2: {} as Signature,
+  ready3: false,
+  tx3: [] as any,
+  executed: false,
+  tickets: [] as string[],
+}
+const initOrder = () => {
+  return {
+    id: '' as Hex,
+    secret: generateHex(),
+    ticketSecrets: generateBatchHex(),
+    amount: BigInt(0),
+    signDeadline: BigInt(0),
+  }
+}
+const blankContractData = {
+  DECIMALS: 0,
+  MAX: 0,
+  NONCE_GHO: BigInt(0),
+  NONCE_QRFLOW: BigInt(0),
+  updatedOrderId: '' as Hex,
+}
+const blankData = {
+  amount: '',
+  deadline: 0,
+  stream: false,
+  nbTickets: 0,
+  ticketIds: [],
+}
 
 export default function Send() {
   const { isConnected, address } = useAccount()
@@ -68,29 +110,14 @@ export default function Send() {
   const chainId = useChainId()
   const gho = load('Gho', chainId)
   const contract = load('QRFlow', chainId)
-  const [steps, setSteps] = useState({
-    ready1: false,
-    sign1: '' as Hex,
-    ready2: false,
-    sign2: {} as Signature,
-    ready3: false,
-    tx3: [] as any,
-    executed: false,
-    tickets: [] as string[],
-  })
+  const [steps, setSteps] = useState(blankSteps)
   const order = useRef<{
     id: Hex
     secret: Hex
     ticketSecrets: Hex[]
     amount: bigint
     signDeadline: bigint
-  }>({
-    id: '0x0',
-    secret: generateHex(),
-    ticketSecrets: generateBatchHex(),
-    amount: BigInt(0),
-    signDeadline: BigInt(0),
-  })
+  }>(initOrder())
   const [currentTicket, setCurrentTicket] = useState(1)
   const { signRequest, signature, isLoadingSign, isErrorSign, convert } =
     useSigner()
@@ -100,24 +127,19 @@ export default function Send() {
       contract,
       method: 'createOrder',
       args: steps.tx3,
+      ignoreError: true,
     })
   const isLoading = isLoadingSign || isLoadingTx
   const wss = useWebSocketPublicClient({ chainId })
-  const [initData, setInitData] = useState<{
+  const [contractData, setContractData] = useState<{
     DECIMALS: number
     MAX: number
     NONCE_GHO: bigint
     NONCE_QRFLOW: bigint
     updatedOrderId: Hex
-  }>({
-    DECIMALS: 0,
-    MAX: 0,
-    NONCE_GHO: BigInt(0),
-    NONCE_QRFLOW: BigInt(0),
-    updatedOrderId: '0x0',
-  })
+  }>(blankContractData)
   isConnected &&
-    initData.DECIMALS === 0 &&
+    contractData.DECIMALS === 0 &&
     wss
       ?.multicall({
         contracts: [
@@ -145,7 +167,7 @@ export default function Send() {
       .then((res) => {
         const DECIMALS = res![0].result as number
         const NONCE_QRFLOW = res![3].result as bigint
-        setInitData({
+        setContractData({
           DECIMALS: DECIMALS,
           MAX:
             Number(
@@ -166,16 +188,7 @@ export default function Send() {
     stream: boolean
     nbTickets: number
     ticketIds: Hex[]
-  }>({
-    amount: '',
-    deadline: 0,
-    stream: false,
-    nbTickets: 0,
-    ticketIds: generateTicketIds(
-      order.current.secret,
-      order.current.ticketSecrets
-    ),
-  })
+  }>(blankData)
   const restrict = (n: any, min: number, max: number) =>
     Number(n) > max ? max : Number(n) < min ? min : n
   const handleData = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,7 +196,7 @@ export default function Send() {
     if (e.target.name === 'amount') {
       value = value.replace(',', '.')
       value = floatRegex.test(value)
-        ? restrict(value, 0, initData.MAX)
+        ? restrict(value, 0, contractData.MAX)
         : data.amount
     } else if (e.target.name === 'nbTickets') {
       value = restrict(Math.round(Number(value)), 0, 10)
@@ -217,9 +230,9 @@ export default function Send() {
     if (steps.ready1 && !steps.ready2) {
       const tempAmount =
         BigInt(Number(data.amount * 10 ** PRECISION)) *
-        BigInt(10 ** (initData.DECIMALS - PRECISION))
+        BigInt(10 ** (contractData.DECIMALS - PRECISION))
       order.current.amount = tempAmount - (tempAmount % BigInt(data.nbTickets))
-      order.current.id = initData.updatedOrderId
+      order.current.id = contractData.updatedOrderId
       signRequest({
         args: generateTicketPermit({
           chainId: chainId,
@@ -241,7 +254,7 @@ export default function Send() {
           owner: address!,
           spender: contract!.address!,
           value: order.current.amount,
-          nonce: initData.NONCE_GHO,
+          nonce: contractData.NONCE_GHO,
           deadline: order.current.signDeadline,
         }),
         index: 2,
@@ -253,7 +266,11 @@ export default function Send() {
           order.current.amount,
           BigInt(Math.floor(data.deadline / 1000)),
           Number(data.stream),
-          data.ticketIds.slice(0, data.nbTickets),
+          generateTicketIds(
+            order.current.secret,
+            order.current.ticketSecrets,
+            data.nbTickets
+          ),
           steps.sign2,
           order.current.signDeadline,
         ],
@@ -262,13 +279,20 @@ export default function Send() {
       sendTx({ index: 3 })
     }
   }
+  const reset = () => {
+    setSteps(blankSteps)
+    order.current = initOrder()
+    setContractData(blankContractData)
+    setHdm({ hours: 0, days: 0, months: 0 })
+    setData(blankData)
+  }
   useEffect(() => {
     if (isConnected)
       setSteps({
         ...steps,
         ready1:
           Number(data.amount) > 0 &&
-          Number(data.amount) <= initData.MAX &&
+          Number(data.amount) <= contractData.MAX &&
           data.nbTickets > 0 &&
           data.nbTickets <= 10 &&
           hdm.months + hdm.days + hdm.hours > 0,
@@ -324,8 +348,9 @@ export default function Send() {
     }
   }, [steps, isReadyTx, isSuccessTx, isErrorTx])
   useEffect(() => {
+    if (!isLoadingTx && !isSuccessTx) reset()
     if (isConnected && !contract) openSwitchNetworks()
-  }, [isConnected && chainId])
+  }, [isConnected, address, chainId])
   useEffect(() => {
     if (!isConnected) setOpen(true)
   }, [])
@@ -416,6 +441,7 @@ export default function Send() {
                   </div>
                   <Input
                     isRequired
+                    autoComplete="off"
                     name="amount"
                     size="sm"
                     type="text"
@@ -429,7 +455,10 @@ export default function Send() {
                         className="text-xs text-amber-600 font-mono font-semibold tracking-widest cursor-pointer"
                         tabIndex={-1}
                         onClick={() =>
-                          setData({ ...data, amount: initData.MAX.toString() })
+                          setData({
+                            ...data,
+                            amount: contractData.MAX.toString(),
+                          })
                         }
                       >
                         MAX
