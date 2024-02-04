@@ -26,6 +26,7 @@ Given a wallet address, you can track the status of its created tickets and also
 
 Everything is done except the frontend (70%). Now I plan to finish the project 100% and to add:
 
-- Support for any ERC20 token
-- Credit delegation tickets for $GHO
+- Support for any ERC20 token over 7 EVM chains + 4 testnets
+- Gasless claims via sponsoring at deposit using Gelato Relay
 - Maybe CCIP for crosschain transfers using a trick
+- Fee system and tokenomics
