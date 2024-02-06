@@ -11,7 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "vercel": "vercel deploy --prod",
+    "vercel": "vercel build --prod && vercel deploy --prebuilt --prod",
     "fleek": "fleek sites deploy",
     "node": "hardhat node",
     "solhint": "solhint contracts/**/*.sol",
