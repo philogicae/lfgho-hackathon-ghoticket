@@ -82,7 +82,7 @@ export default function RootLayout({
       window.location.reload()
     }
   }
-  const csp = `default-src 'self' api.web3modal.com *.walletconnect.com *.walletconnect.org wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org/rpc *.infura.io https://*.blastapi.io wss://*.blastapi.io; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' * blob: data:; script-src 'self' *.vercel-scripts.com 'unsafe-eval' 'unsafe-inline'`
+  const csp = `default-src 'self' api.web3modal.com *.walletconnect.com *.walletconnect.org wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org/rpc *.infura.io https://*.blastapi.io wss://*.blastapi.io rpc.sepolia.org cloudflare-eth.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' * blob: data:; script-src 'self' *.vercel-scripts.com 'unsafe-eval' 'unsafe-inline'; object-src data:`
   return (
     <html lang="en" className={font.variable}>
       <head>

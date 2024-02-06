@@ -11,27 +11,12 @@ export function useSigner() {
   const addSnackbar = useSnackbar()
   const { trigger, wait, done } = useTrigger()
   const {
-    signTypedData,
+    signTypedDataAsync,
     data: signature,
-    isLoading,
+    isPending,
     isSuccess,
     isError,
-  } = useSignTypedData({
-    onSuccess: () => {
-      done()
-      addSnackbar({
-        type: 'success',
-        text: (id.current ? `${id.current}. ` : '') + 'Signed successfully',
-      })
-    },
-    onError: () => {
-      done()
-      addSnackbar({
-        type: 'warning',
-        text: (id.current ? `${id.current}. ` : '') + 'Signature rejected',
-      })
-    },
-  })
+  } = useSignTypedData()
   const signRequest = ({ args, index }: { args: any; index?: number }) => {
     if (index) id.current = index
     dataToSign.current = args
@@ -42,7 +27,25 @@ export function useSigner() {
       duration: 0,
       trigger: trigger,
     })
-    signTypedData({ ...dataToSign.current })
+    signTypedDataAsync({ ...dataToSign.current })
+      .then(() => {
+        if (trigger.current) {
+          done()
+          addSnackbar({
+            type: 'success',
+            text: (id.current ? `${id.current}. ` : '') + 'Signed successfully',
+          })
+        }
+      })
+      .catch(() => {
+        if (trigger.current) {
+          done()
+          addSnackbar({
+            type: 'warning',
+            text: (id.current ? `${id.current}. ` : '') + 'Signature rejected',
+          })
+        }
+      })
   }
   const toSignature = (hex: Hex) => {
     verifyTypedData({
@@ -64,7 +67,7 @@ export function useSigner() {
   return {
     signRequest,
     signature,
-    isLoadingSign: isLoading,
+    isLoadingSign: isPending,
     isSuccessSign: isSuccess && isValidSignature.current,
     isErrorSign: isError || !isValidSignature.current,
     convert: toSignature,

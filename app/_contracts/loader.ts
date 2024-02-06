@@ -21,7 +21,10 @@ export type ContractData = {
   abi: Abi
 }
 
-const load = (contract: string, chainId: number): ContractData | undefined => {
+const load = (
+  contract: string,
+  chainId: number = 0
+): ContractData | undefined => {
   const chain = chainId.toString()
   if (reg?.[contract][chain] && abis[contract])
     return {

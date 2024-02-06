@@ -4,9 +4,9 @@ import { cn } from '@utils/tw'
 import { useChains, useModal } from 'connectkit'
 import {
   useAccount,
-  useChainId,
-  useSwitchNetwork,
-  useWebSocketPublicClient,
+  useSwitchChain,
+  useReadContracts,
+  useReadContract,
 } from 'wagmi'
 import load from '@contracts/loader'
 import { useTransact } from '@components/hooks/Transact'
@@ -59,7 +59,9 @@ const blankData = {
 }
 const blankSteps = {
   check1: [] as any,
+  txArgs1: false,
   tx1: [] as any,
+  txArgs2: false,
   tx2: [] as any,
 }
 
@@ -68,10 +70,9 @@ export default function Claim() {
   const [ticket, setTicket] = useState(blankTicket)
   const chains = useChains()
   const chainName = chains.find((chain) => chain.id === ticket.chainId)?.name
-  const { isConnected, address } = useAccount()
+  const { isConnected, address, chainId: selectedChainId } = useAccount()
   const { setOpen } = useModal()
-  const { switchNetwork } = useSwitchNetwork()
-  const selectedChainId = useChainId()
+  const { switchChain } = useSwitchChain()
   const contract = load('QRFlow', ticket.chainId)
   const [data, setData] = useState<{
     orderId: Hex
@@ -93,65 +94,65 @@ export default function Claim() {
     if (decoded) setTicket(decoded)
     else setLoadingTicket(false)
   }
-  const wss = useWebSocketPublicClient(
-    ticket.chainId > 0 ? { chainId: ticket.chainId } : {}
-  )
-  ticket.chainId > 0 &&
-    loadingTicket &&
-    wss
-      ?.multicall({
-        contracts: [
-          {
-            ...contract!,
-            functionName: 'getFullOrder',
-            args: [ticket.content.orderId],
-          },
-          {
-            ...contract!,
-            functionName: 'isValid',
-            args: [ticket.content],
-          },
-        ],
-      })
-      .then((res: any[]) => {
-        const x = res![0].result as {
+  const dataReads = useReadContracts({
+    contracts: [
+      {
+        chainId: ticket.chainId,
+        ...contract!,
+        functionName: 'getFullOrder',
+        args: [ticket.content.orderId],
+      },
+      {
+        chainId: ticket.chainId,
+        ...contract!,
+        functionName: 'isValid',
+        args: [ticket.content],
+      },
+    ],
+    query: {
+      enabled: ticket.chainId > 0 && loadingTicket && !data.orderId,
+    },
+  })
+  useEffect(() => {
+    if (dataReads.isSuccess && !data.orderId) {
+      const res = dataReads.data
+      const x = res![0].result as {
+        order: {
+          id: Hex
           order: {
-            id: Hex
-            order: {
-              creator: Address
-              amount: bigint
-              createdAt: bigint
-              deadline: bigint
-              streamed: bigint
-              closed: bigint
-            }
-            nbTickets: bigint
+            creator: Address
+            amount: bigint
+            createdAt: bigint
+            deadline: bigint
+            streamed: bigint
+            closed: bigint
           }
-          status: { ticketIds: Hex[]; claimers: Address[] }
+          nbTickets: bigint
         }
-        const y = res![1].result as [Hex, bigint, bigint]
-        const nbTickets = Number(x.order.nbTickets)
-        const status = x.status.claimers.map((c) => Number(c !== zeroAddress))
-        for (let i = 0; i < 10 - nbTickets; i++) {
-          status.push(-1)
-        }
-        setData({
-          orderId: x.order.id,
-          creator: x.order.order.creator,
-          totalAmount:
-            Number(x.order.order.amount / BigInt(10 ** 10)) / 10 ** 8,
-          createdAt: Number(x.order.order.createdAt) * 1000,
-          deadline: Number(x.order.order.deadline) * 1000,
-          closed: Boolean(x.order.order.closed),
-          nbTickets: nbTickets,
-          status: status,
-          ticketIndex: x.status.ticketIds.indexOf(y[0]) + 1,
-          ticketId: y[0],
-          amount: Number(y[1] / BigInt(10 ** 10)) / 10 ** 8,
-          streamed: Boolean(y[2]),
-        })
+        status: { ticketIds: Hex[]; claimers: Address[] }
+      }
+      const y = res![1].result as [Hex, bigint, bigint]
+      const nbTickets = Number(x.order.nbTickets)
+      const status = x.status.claimers.map((c) => Number(c !== zeroAddress))
+      for (let i = 0; i < 10 - nbTickets; i++) {
+        status.push(-1)
+      }
+      setData({
+        orderId: x.order.id,
+        creator: x.order.order.creator,
+        totalAmount: Number(x.order.order.amount / BigInt(10 ** 10)) / 10 ** 8,
+        createdAt: Number(x.order.order.createdAt) * 1000,
+        deadline: Number(x.order.order.deadline) * 1000,
+        closed: Boolean(x.order.order.closed),
+        nbTickets: nbTickets,
+        status: status,
+        ticketIndex: x.status.ticketIds.indexOf(y[0]) + 1,
+        ticketId: y[0],
+        amount: Number(y[1] / BigInt(10 ** 10)) / 10 ** 8,
+        streamed: Boolean(y[2]),
       })
-      .catch(() => setLoadingTicket(false))
+    } else if (dataReads.isError) setLoadingTicket(false)
+  }, [dataReads])
   const [steps, setSteps] = useState(blankSteps)
   const [reserved, setReserved] = useState(false)
   const [seconds, setSeconds] = useState(0)
@@ -165,7 +166,7 @@ export default function Claim() {
     contract,
     method: 'reserveTicket',
     args: steps.tx1,
-    ignoreError: true,
+    enabled: steps.txArgs1,
   })
   const {
     sendTx: sendTx2,
@@ -177,34 +178,45 @@ export default function Claim() {
     contract,
     method: 'claimTicket',
     args: steps.tx2,
-    ignoreError: true,
+    enabled: steps.txArgs2,
   })
-  data.amount > 0 &&
+  const mustCheckReservation =
+    data.amount > 0 &&
     isConnected &&
     ticket.chainId === selectedChainId &&
     steps.check1.length > 0 &&
     seconds < 1 &&
-    !reserved &&
-    wss
-      ?.readContract({
-        ...contract!,
-        functionName: 'getReservation',
-        args: steps.check1,
+    !reserved
+  const reservation = useReadContract({
+    chainId: ticket.chainId,
+    ...contract!,
+    functionName: 'getReservation',
+    args: steps.check1,
+    query: {
+      enabled: mustCheckReservation,
+      select: (data) => Number(data as bigint) * 1000,
+    },
+  })
+  const handleReservation = () => {
+    const now = new Date().getTime()
+    if (reservation.data! > now)
+      setSeconds(Math.floor((reservation.data! - now) / 1000) + 5)
+    else if (reservation.data! > 0) setReserved(true)
+    else
+      setSteps({
+        ...steps,
+        txArgs1: true,
+        tx1: steps.check1,
       })
-      .then((res) => {
-        const unlock = Number(res) * 1000
-        const now = new Date().getTime()
-        if (unlock > now) setSeconds(Math.floor((unlock - now) / 1000) + 5)
-        else if (unlock > 0) setReserved(true)
-        else
-          setSteps({
-            ...steps,
-            tx1: steps.check1,
-          })
-      })
+  }
+  useEffect(() => {
+    if (mustCheckReservation && (!steps.txArgs1 || isSuccessTx1))
+      handleReservation()
+  }, [isConnected, address, reservation.data, isSuccessTx1])
   const submit = () => {
     if (!isConnected) setOpen(true)
-    else if (ticket.chainId !== selectedChainId) switchNetwork!(ticket.chainId)
+    else if (ticket.chainId !== selectedChainId)
+      switchChain({ chainId: ticket.chainId })
     else if (isReadyTx1 && !isSuccessTx1 && !reserved) sendTx1({ index: 1 })
     else if (isReadyTx2 && !isSuccessTx2) sendTx2({ index: 2 })
   }
@@ -212,7 +224,7 @@ export default function Claim() {
     //setTicket(blankTicket)
     //setData(blankData)
     //setLoadingTicket(true)
-    setSteps(blankSteps)
+    //setSteps(blankSteps)
     setReserved(false)
     setSeconds(0)
   }
@@ -226,6 +238,7 @@ export default function Claim() {
     } else if (seconds < 1 && reserved && steps.tx2.length === 0)
       setSteps({
         ...steps,
+        txArgs2: true,
         tx2: [ticket.content],
       })
   }, [seconds, reserved])
@@ -253,7 +266,9 @@ export default function Claim() {
   useEffect(() => {
     if (ticketCode) decodeTicket(ticketCode)
   }, [ticketCode])
-  useEffect(() => reset(), [address, selectedChainId])
+  useEffect(() => {
+    if (isConnected) reset()
+  }, [isConnected, address, selectedChainId])
   return (
     <>
       <Title
@@ -282,7 +297,7 @@ export default function Claim() {
       <div
         className={cn(
           'flex flex-col h-full min-w-[320px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
-          data.amount === 0 ? 'w-full' : ''
+          data.amount === 0 ? 'w-full' : 'bg-blue-800 bg-opacity-10'
         )}
       >
         {!ticketCode ? (

@@ -1,7 +1,7 @@
 'use client'
 //import { useEffect } from 'react'
 import { cn } from '@utils/tw'
-//import { useChainId } from 'wagmi'
+//import { useAccount } from 'wagmi'
 //import load from '@contracts/loader'
 //import { useTransact } from '@components/hooks/Transact'
 import Title from '@components/elements/Title'
@@ -10,8 +10,7 @@ import { FaMagnifyingGlass, FaWandMagicSparkles } from 'react-icons/fa6'
 
 export default function Track() {
   //const { addr } = useParams()
-  //const { isConnected, address } = useAccount()
-  //const chainId = useChainId()
+  //const { isConnected, address, chainId } = useAccount()
   //const contract = load('QRFlow', chainId)
   //const [isLoading, setIsLoading] = useState(false)
   return (

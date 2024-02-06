@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { cn } from '@utils/tw'
 import { useModal } from 'connectkit'
-import { useChainId, useAccount, useWebSocketPublicClient } from 'wagmi'
+import { useAccount, useReadContracts } from 'wagmi'
 import load from '@contracts/loader'
 import { generateTicketPermit, generateGhoPermit } from '@utils/permits'
 import { useSigner } from '@components/hooks/Signer'
@@ -68,6 +68,8 @@ const generateTicketIds = (
         encodePacked(['bytes32', 'bytes32'], [orderSecret, ticketSecret])
       )
     )
+const restrict = (n: any, min: number, max: number) =>
+  Number(n) > max ? max : Number(n) < min ? min : n
 
 const blankSteps = {
   ready1: false,
@@ -75,6 +77,7 @@ const blankSteps = {
   ready2: false,
   sign2: {} as Signature,
   ready3: false,
+  txArgs3: false,
   tx3: [] as any,
   executed: false,
   tickets: [] as string[],
@@ -104,10 +107,9 @@ const blankData = {
 }
 
 export default function Send() {
-  const { isConnected, address } = useAccount()
+  const { isConnected, address, chainId } = useAccount()
   const { setOpen, openSwitchNetworks } = useModal()
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const chainId = useChainId()
   const gho = load('Gho', chainId)
   const contract = load('QRFlow', chainId)
   const [steps, setSteps] = useState(blankSteps)
@@ -123,14 +125,13 @@ export default function Send() {
     useSigner()
   const { sendTx, isReadyTx, isLoadingTx, isSuccessTx, isErrorTx } =
     useTransact({
-      chainId,
+      chainId: chainId!,
       contract,
       method: 'createOrder',
       args: steps.tx3,
-      ignoreError: true,
+      enabled: steps.txArgs3,
     })
   const isLoading = isLoadingSign || isLoadingTx
-  const wss = useWebSocketPublicClient({ chainId })
   const [contractData, setContractData] = useState<{
     DECIMALS: number
     MAX: number
@@ -138,49 +139,52 @@ export default function Send() {
     NONCE_QRFLOW: bigint
     updatedOrderId: Hex
   }>(blankContractData)
-  isConnected &&
-    contractData.DECIMALS === 0 &&
-    wss
-      ?.multicall({
-        contracts: [
-          {
-            ...gho!,
-            functionName: 'decimals',
-          },
-          {
-            ...gho!,
-            functionName: 'balanceOf',
-            args: [address!],
-          },
-          {
-            ...gho!,
-            functionName: 'nonces',
-            args: [address!],
-          },
-          {
-            ...contract!,
-            functionName: 'getAccountNonce',
-            args: [address!],
-          },
-        ],
+  const dataReads = useReadContracts({
+    contracts: [
+      {
+        ...gho!,
+        functionName: 'decimals',
+      },
+      {
+        ...gho!,
+        functionName: 'balanceOf',
+        args: [address!],
+      },
+      {
+        ...gho!,
+        functionName: 'nonces',
+        args: [address!],
+      },
+      {
+        ...contract!,
+        functionName: 'getAccountNonce',
+        args: [address!],
+      },
+    ],
+    query: {
+      enabled: isConnected && contract && !contractData.DECIMALS,
+    },
+  })
+  useEffect(() => {
+    if (isConnected && dataReads.isSuccess && !contractData.DECIMALS) {
+      const res = dataReads.data
+      const DECIMALS = res[0].result as number
+      const NONCE_QRFLOW = res[3].result as bigint
+      setContractData({
+        DECIMALS: DECIMALS,
+        MAX:
+          Number(
+            (res[1].result as bigint) / BigInt(10 ** (DECIMALS - PRECISION))
+          ) /
+          10 ** PRECISION,
+        NONCE_GHO: res[2].result as bigint,
+        NONCE_QRFLOW: NONCE_QRFLOW,
+        updatedOrderId: keccak256(
+          encodePacked(['address', 'uint256'], [address!, NONCE_QRFLOW])
+        ),
       })
-      .then((res) => {
-        const DECIMALS = res![0].result as number
-        const NONCE_QRFLOW = res![3].result as bigint
-        setContractData({
-          DECIMALS: DECIMALS,
-          MAX:
-            Number(
-              (res![1].result as bigint) / BigInt(10 ** (DECIMALS - PRECISION))
-            ) /
-            10 ** PRECISION,
-          NONCE_GHO: res![2].result as bigint,
-          NONCE_QRFLOW: NONCE_QRFLOW,
-          updatedOrderId: keccak256(
-            encodePacked(['address', 'uint256'], [address!, NONCE_QRFLOW])
-          ),
-        })
-      })
+    }
+  }, [dataReads])
   const [hdm, setHdm] = useState({ hours: 0, days: 0, months: 0 })
   const [data, setData] = useState<{
     amount: any
@@ -189,8 +193,6 @@ export default function Send() {
     nbTickets: number
     ticketIds: Hex[]
   }>(blankData)
-  const restrict = (n: any, min: number, max: number) =>
-    Number(n) > max ? max : Number(n) < min ? min : n
   const handleData = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value
     if (e.target.name === 'amount') {
@@ -235,7 +237,7 @@ export default function Send() {
       order.current.id = contractData.updatedOrderId
       signRequest({
         args: generateTicketPermit({
-          chainId: chainId,
+          chainId: chainId!,
           contactAddr: contract!.address,
           creator: address!,
           orderId: order.current.id,
@@ -247,21 +249,26 @@ export default function Send() {
       order.current.signDeadline = BigInt(
         Math.floor(new Date().getTime() / 1000 + 5 * 60)
       )
-      signRequest({
-        args: generateGhoPermit({
-          chainId: chainId,
-          contactAddr: gho!.address,
-          owner: address!,
-          spender: contract!.address!,
-          value: order.current.amount,
-          nonce: contractData.NONCE_GHO,
-          deadline: order.current.signDeadline,
-        }),
-        index: 2,
-      })
-    } else if (steps.ready3 && !isReadyTx) {
+      setTimeout(
+        () =>
+          signRequest({
+            args: generateGhoPermit({
+              chainId: chainId!,
+              contactAddr: gho!.address,
+              owner: address!,
+              spender: contract!.address!,
+              value: order.current.amount,
+              nonce: contractData.NONCE_GHO,
+              deadline: order.current.signDeadline,
+            }),
+            index: 2,
+          }),
+        1000
+      )
+    } else if (steps.ready3 && !isReadyTx)
       setSteps({
         ...steps,
+        txArgs3: true,
         tx3: [
           order.current.amount,
           BigInt(Math.floor(data.deadline / 1000)),
@@ -275,16 +282,7 @@ export default function Send() {
           order.current.signDeadline,
         ],
       })
-    } else if (steps.ready3 && isReadyTx && !steps.executed) {
-      sendTx({ index: 3 })
-    }
-  }
-  const reset = () => {
-    setSteps(blankSteps)
-    order.current = initOrder()
-    setContractData(blankContractData)
-    setHdm({ hours: 0, days: 0, months: 0 })
-    setData(blankData)
+    else if (steps.ready3 && isReadyTx && !steps.executed) sendTx({ index: 3 })
   }
   useEffect(() => {
     if (isConnected)
@@ -336,7 +334,7 @@ export default function Send() {
             ...steps,
             executed: true,
             tickets: await generateBatchTicketHash(
-              chainId,
+              chainId!,
               order.current.id,
               order.current.secret,
               order.current.ticketSecrets.slice(0, data.nbTickets),
@@ -347,9 +345,18 @@ export default function Send() {
       }
     }
   }, [steps, isReadyTx, isSuccessTx, isErrorTx])
+  const reset = () => {
+    setSteps(blankSteps)
+    order.current = initOrder()
+    setContractData(blankContractData)
+    setHdm({ hours: 0, days: 0, months: 0 })
+    setData(blankData)
+  }
   useEffect(() => {
-    if (!isLoadingTx && !isSuccessTx) reset()
-    if (isConnected && !contract) openSwitchNetworks()
+    if (isConnected) {
+      if (!contract) openSwitchNetworks()
+      else if (!isLoadingTx && !isSuccessTx) reset()
+    }
   }, [isConnected, address, chainId])
   useEffect(() => {
     if (!isConnected) setOpen(true)
@@ -378,7 +385,7 @@ export default function Send() {
       <div
         className={cn(
           'flex flex-col h-full min-w-[320px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl',
-          !isConnected || !contract ? 'w-full' : ''
+          !isConnected || !contract ? 'w-full' : 'bg-blue-800 bg-opacity-10'
         )}
       >
         {!isConnected ? (
