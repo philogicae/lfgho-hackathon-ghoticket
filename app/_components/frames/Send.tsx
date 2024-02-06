@@ -2,9 +2,10 @@
 import { useEffect, useState, useRef } from 'react'
 import { cn } from '@utils/tw'
 import { useModal } from 'connectkit'
-import { useAccount, useReadContracts } from 'wagmi'
+import { useAccount } from 'wagmi'
 import load from '@contracts/loader'
 import { generateTicketPermit, generateGhoPermit } from '@utils/permits'
+import { useCall } from '@components/hooks/Caller'
 import { useSigner } from '@components/hooks/Signer'
 import { useTransact } from '@components/hooks/Transact'
 import WrongChain from '@components/elements/WrongChain'
@@ -139,52 +140,51 @@ export default function Send() {
     NONCE_QRFLOW: bigint
     updatedOrderId: Hex
   }>(blankContractData)
-  const dataReads = useReadContracts({
-    contracts: [
+  const { result: resultData, isSuccess: isSuccessCall } = useCall({
+    calls: [
       {
-        ...gho!,
+        contract: gho!,
         functionName: 'decimals',
       },
       {
-        ...gho!,
+        contract: gho!,
         functionName: 'balanceOf',
         args: [address!],
       },
       {
-        ...gho!,
+        contract: gho!,
         functionName: 'nonces',
         args: [address!],
       },
       {
-        ...contract!,
+        contract: contract!,
         functionName: 'getAccountNonce',
         args: [address!],
       },
     ],
-    query: {
-      enabled: isConnected && contract && !contractData.DECIMALS,
-    },
+    initData: [0, BigInt(0), BigInt(0), BigInt(0)],
+    active: isConnected && contract && !contractData.DECIMALS,
   })
   useEffect(() => {
-    if (isConnected && dataReads.isSuccess && !contractData.DECIMALS) {
-      const res = dataReads.data
-      const DECIMALS = res[0].result as number
-      const NONCE_QRFLOW = res[3].result as bigint
+    if (isConnected && isSuccessCall && !contractData.DECIMALS)
       setContractData({
-        DECIMALS: DECIMALS,
+        DECIMALS: resultData.decimals,
         MAX:
           Number(
-            (res[1].result as bigint) / BigInt(10 ** (DECIMALS - PRECISION))
+            resultData.balanceOf /
+              BigInt(10 ** (resultData.decimals - PRECISION))
           ) /
           10 ** PRECISION,
-        NONCE_GHO: res[2].result as bigint,
-        NONCE_QRFLOW: NONCE_QRFLOW,
+        NONCE_GHO: resultData.nonces,
+        NONCE_QRFLOW: resultData.getAccountNonce,
         updatedOrderId: keccak256(
-          encodePacked(['address', 'uint256'], [address!, NONCE_QRFLOW])
+          encodePacked(
+            ['address', 'uint256'],
+            [address!, resultData.getAccountNonce]
+          )
         ),
       })
-    }
-  }, [dataReads])
+  }, [resultData])
   const [hdm, setHdm] = useState({ hours: 0, days: 0, months: 0 })
   const [data, setData] = useState<{
     amount: any
