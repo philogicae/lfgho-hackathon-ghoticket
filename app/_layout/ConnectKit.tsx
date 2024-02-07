@@ -27,10 +27,6 @@ if (!process.env.NEXT_PUBLIC_BLASTAPI_ID)
   throw new Error('You need to provide NEXT_PUBLIC_BLASTAPI_ID env variable')
 if (!process.env.NEXT_PUBLIC_BLASTAPI_ID_2)
   throw new Error('You need to provide NEXT_PUBLIC_BLASTAPI_ID_2 env variable')
-/* if (!process.env.NEXT_PUBLIC_INFURA_ID)
-  throw new Error('You need to provide NEXT_PUBLIC_INFURA_ID env variable')
-if (!process.env.NEXT_PUBLIC_ALCHEMY_ID)
-  throw new Error('You need to provide NEXT_PUBLIC_ALCHEMY_ID env variable') */
 
 const chains = [
   sepolia,
