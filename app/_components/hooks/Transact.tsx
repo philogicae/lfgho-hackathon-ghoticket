@@ -143,6 +143,7 @@ const useTransact = ({
     isSuccessTx: isPreSuccess && isPostSuccess,
     isErrorTx: isPreError || isPostError,
     errorTx: preError || postError,
+    txLink: txHash ? blockExplorer + '/tx/' + txHash : undefined,
   }
 }
 

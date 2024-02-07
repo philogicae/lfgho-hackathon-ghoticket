@@ -21,6 +21,12 @@ import {
   FaArrowRightToBracket,
   FaRegCircleCheck,
 } from 'react-icons/fa6'
+import {
+  Modal,
+  ModalContent,
+  ModalBody,
+  useDisclosure,
+} from '@nextui-org/react'
 import { useParams } from 'react-router-dom'
 import { extractFromTicketHash } from '@utils/packing'
 import { Hex, Address, zeroAddress, keccak256, encodePacked } from 'viem'
@@ -62,6 +68,7 @@ const blankSteps = {
 }
 
 export default function Claim() {
+  const { isOpen, onClose } = useDisclosure({ defaultOpen: true })
   const { ticketCode } = useParams()
   const [ticket, setTicket] = useState(blankTicket)
   const chains = useChains()
@@ -184,6 +191,7 @@ export default function Claim() {
     isReadyTx: isReadyTx2,
     isLoadingTx: isLoadingTx2,
     isSuccessTx: isSuccessTx2,
+    txLink: txLink2,
   } = useTransact({
     chainId: ticket.chainId,
     contract,
@@ -332,7 +340,7 @@ export default function Claim() {
           <div className="flex flex-col items-center justify-center w-full h-full mb-10">
             <FaBan className="mb-4 text-6xl" />
             <span className="text-xl font-bold w-44 text-center">
-              Invalid or Expired
+              Invalid, Expired or Already Claimed
             </span>
           </div>
         ) : (
@@ -376,9 +384,49 @@ export default function Claim() {
             </div>
             <div className="h-full flex flex-col text-sm items-center justify-between text-center font-mono break-words px-3 pb-1">
               {isSuccessTx2 && (
-                <span className="absolute text-6xl font-sans font-extrabold text-white bg-red-800 border-2 border-white px-3 rounded-xl -rotate-45 top-1/2 z-40">
-                  CLAIMED
-                </span>
+                <Modal
+                  isOpen={isOpen}
+                  onClose={onClose}
+                  placement="center"
+                  classNames={{ base: 'm-2', closeButton: 'text-red-500' }}
+                >
+                  <ModalContent className="w-72 h-80 overflow-hidden bg-gray-950 bg-opacity-90 rounded-2xl border-1 border-green-500">
+                    {() => (
+                      <ModalBody className="p-4 flex flex-col w-full h-full items-center justify-between font-mono">
+                        <div className="firework"></div>
+                        <div className="firework"></div>
+                        <div className="firework"></div>
+                        <div />
+                        <span className="text-green-500 text-3xl text-center font-bold">
+                          SUCCESSFULLY CLAIMED!
+                        </span>
+                        <div className="flex flex-col w-full items-center justify-center">
+                          <div className="flex flex-col w-full border-1 border-amber-500 rounded-xl p-3">
+                            <div className="w-full flex flex-row items-center justify-start text-xl">
+                              <span className="text-cyan-400 pr-2">Token:</span>
+                              <span>$GHO</span>
+                            </div>
+                            <div className="w-full flex flex-row items-center justify-start text-xl">
+                              <span className="text-cyan-400 pr-2">
+                                Amount:
+                              </span>
+                              <span>{data.amount}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <a
+                          className="flex flex-row hover:underline text-green-500 pl-3"
+                          href={txLink2}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span className="text-sm">Confirmed transaction</span>
+                          <FaLink className="ml-2 w-5 h-5" />
+                        </a>
+                      </ModalBody>
+                    )}
+                  </ModalContent>
+                </Modal>
               )}
               <div />
               <div className="w-full flex flex-col border-1 border-blue-500 rounded-xl items-start justify-center">
