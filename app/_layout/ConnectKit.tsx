@@ -127,6 +127,10 @@ export default function ConnectKit({
                 QR Flow is an experimental project
               </span>
             ),
+            walletOnboardingUrl:
+              window.screen.width >= 1280
+                ? 'https://rabby.io'
+                : 'https://metamask.io/download',
           }}
           customTheme={{
             '--ck-connectbutton-font-size': '15px',
@@ -136,6 +140,7 @@ export default function ConnectKit({
             '--ck-font-family':
               'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
             '--ck-qr-dot-color': '#00FFFF',
+            '--ck-overlay-backdrop-filter': 'blur(1px)',
           }}
         >
           {children}

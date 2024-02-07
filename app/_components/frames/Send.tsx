@@ -682,7 +682,7 @@ export default function Send() {
                           }
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="pl-1"
+                          className="pl-1 hover:underline"
                         >
                           {`$GHO: ${data.amount / data.nbTickets}`}
                         </a>

@@ -340,7 +340,7 @@ export default function Claim() {
           <div className="flex flex-col items-center justify-center w-full h-full mb-10">
             <FaBan className="mb-4 text-6xl" />
             <span className="text-xl font-bold w-44 text-center">
-              Invalid, Expired or Already Claimed
+              Invalid, Expired or already Claimed
             </span>
           </div>
         ) : (
@@ -403,14 +403,22 @@ export default function Claim() {
                         <div className="flex flex-col w-full items-center justify-center">
                           <div className="flex flex-col w-full border-1 border-amber-500 rounded-xl p-3">
                             <div className="w-full flex flex-row items-center justify-start text-xl">
-                              <span className="text-cyan-400 pr-2">Token:</span>
+                              <span className="text-cyan-400 pr-2">token:</span>
                               <span>$GHO</span>
                             </div>
                             <div className="w-full flex flex-row items-center justify-start text-xl">
                               <span className="text-cyan-400 pr-2">
-                                Amount:
+                                amount:
                               </span>
                               <span>{data.amount}</span>
+                            </div>
+                            <div className="w-full flex flex-row items-center justify-start text-xl">
+                              <span className="text-cyan-400 pr-1.5">
+                                stream:
+                              </span>
+                              <span className="text-xs pt-0.5">
+                                {data.streamed ? '🟢' : '🔴'}
+                              </span>
                             </div>
                           </div>
                         </div>
