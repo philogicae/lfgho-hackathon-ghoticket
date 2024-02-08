@@ -79,6 +79,33 @@ module.exports = {
         process.env.NEXT_PUBLIC_INFURA_ID,
       accounts: [process.env.TEST_PRIVATE_KEY],
     },
+    base: {
+      chainId: 8453,
+      url: 'https://base-mainnet.public.blastapi.io',
+      accounts: [process.env.TEST_PRIVATE_KEY],
+    },
+    linea: {
+      chainId: 59144,
+      url:
+        'https://linea-mainnet.infura.io/v3/' +
+        process.env.NEXT_PUBLIC_INFURA_ID,
+      accounts: [process.env.TEST_PRIVATE_KEY],
+    },
+    metis: {
+      chainId: 1088,
+      url: 'https://metis-mainnet.public.blastapi.io',
+      accounts: [process.env.TEST_PRIVATE_KEY],
+    },
+    polygonZkEvm: {
+      chainId: 1101,
+      url: 'https://polygon-zkevm-mainnet.public.blastapi.io',
+      accounts: [process.env.TEST_PRIVATE_KEY],
+    },
+    zkSync: {
+      chainId: 324,
+      url: 'https://mainnet.era.zksync.io',
+      accounts: [process.env.TEST_PRIVATE_KEY],
+    },
   },
   etherscan: {
     apiKey: {
@@ -93,6 +120,11 @@ module.exports = {
       polygonMumbai: process.env.POLYGONSCAN_API_KEY,
       arbitrumSepolia: process.env.ARBITRUMSCAN_API_KEY,
       optimisticSepolia: process.env.OPTIMISMSCAN_API_KEY,
+      base: process.env.BASESCAN_API_KEY,
+      linea: process.env.LINEASCAN_API_KEY,
+      metis: 'metis',
+      polygonZkEvm: process.env.POLYGONSCAN_API_KEY,
+      zkSync: 'zkSync',
     },
     customChains: [
       {
@@ -118,6 +150,31 @@ module.exports = {
         urls: {
           apiURL: 'https://api-sepolia-optimistic.etherscan.io/api',
           browserURL: 'https://sepolia-optimism.etherscan.io',
+        },
+      },
+      {
+        network: 'linea',
+        chainId: 59144,
+        urls: {
+          apiURL: 'https://api.lineascan.build/api',
+          browserURL: 'https://lineascan.build',
+        },
+      },
+      {
+        network: 'metis',
+        chainId: 1088,
+        urls: {
+          apiURL:
+            'https://api.routescan.io/v2/network/mainnet/evm/1088/etherscan',
+          browserURL: 'https://andromeda-explorer.metis.io',
+        },
+      },
+      {
+        network: 'zkSync',
+        chainId: 324,
+        urls: {
+          apiURL: 'https://block-explorer-api.mainnet.zksync.io/api',
+          browserURL: 'https://explorer.zksync.io',
         },
       },
     ],

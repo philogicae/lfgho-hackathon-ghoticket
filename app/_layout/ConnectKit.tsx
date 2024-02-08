@@ -15,6 +15,11 @@ import {
   gnosis,
   bsc,
   avalanche,
+  base,
+  linea,
+  metis,
+  polygonZkEvm,
+  zkSync,
 } from 'wagmi/chains'
 import Loading from '@components/frames/Loading'
 
@@ -40,6 +45,11 @@ const chains = [
   gnosis,
   bsc,
   avalanche,
+  base,
+  linea,
+  metis,
+  polygonZkEvm,
+  zkSync,
 ] as const
 
 export const txType: Record<number, 'eip1559' | 'legacy'> = {
@@ -54,6 +64,11 @@ export const txType: Record<number, 'eip1559' | 'legacy'> = {
   [gnosis.id]: 'eip1559',
   [bsc.id]: 'eip1559',
   [avalanche.id]: 'eip1559',
+  [base.id]: 'eip1559',
+  [linea.id]: 'eip1559',
+  [metis.id]: 'legacy',
+  [polygonZkEvm.id]: 'legacy',
+  [zkSync.id]: 'eip1559',
 }
 
 const blastapi = process.env.NEXT_PUBLIC_BLASTAPI_ID
@@ -70,6 +85,11 @@ const subdomain = {
   Gnosis: 'gnosis-mainnet',
   'BNB Smart Chain': 'bsc-mainnet',
   Avalanche: 'ava-mainnet',
+  Base: 'base-mainnet',
+  'Linea Mainnet': 'linea-mainnet',
+  Metis: 'metis-mainnet',
+  'Polygon zkEVM': 'polygon-zkevm-mainnet',
+  'zkSync Era': 'zksync-mainnet',
 }
 const transports = Object.assign(
   {},
