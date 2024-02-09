@@ -11,6 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "preview": "vercel build && vercel deploy --prebuilt",
     "vercel": "vercel build --prod && vercel deploy --prebuilt --prod",
     "fleek": "fleek sites deploy",
     "vercel+fleek": "vercel build --prod && vercel deploy --prebuilt --prod && fleek sites deploy",

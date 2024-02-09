@@ -11,6 +11,7 @@ import {
   FaXmark,
   FaHandHoldingDollar,
 } from 'react-icons/fa6'
+import { useAccount } from 'wagmi'
 
 const Triangle = ({ className }: { className: ClassName }) => {
   return (
@@ -57,6 +58,7 @@ const Corner = ({
 }
 
 export default function Welcome() {
+  const { address } = useAccount()
   const arrowStyle = 'animate-pulse text-2xl text-cyan-400'
   return (
     <div className="flex flex-col w-full h-full justify-between items-center overflow-hidden">
@@ -98,7 +100,7 @@ export default function Welcome() {
           />
           <Corner
             label="Track"
-            route="track"
+            route={'track' + (address ? `/${address}` : '')}
             position="bottom"
             icon={
               <FaArrowRightArrowLeft
