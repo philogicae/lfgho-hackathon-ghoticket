@@ -31,9 +31,6 @@ yarn-error.log*
 # local env files
 .env
 
-# vercel
-.vercel
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -45,4 +42,8 @@ hackathon
 # Hardhat files
 cache
 artifacts
+
+# Deployments
+.vercel
 fleek.config.json
+.aleph
