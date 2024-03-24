@@ -9,12 +9,14 @@ export default function Title({
   label,
   logo,
   loading,
+  loadingLabel,
   ready,
   onClick,
 }: {
   label: string
   logo: ReactNode
   loading?: boolean
+  loadingLabel?: ReactNode
   ready?: boolean
   onClick?: () => void
 }) {
@@ -34,7 +36,9 @@ export default function Title({
       <Button
         label={label}
         disabled={true}
-        className={'ml-2.5 mr-2 bg-[#3909bd] w-40 text-md font-extrabold'}
+        className={
+          'ml-2.5 mr-2 bg-gradient-to-r from-green-600 to-cyan-600 w-40 text-md font-extrabold !bg-opacity-5'
+        }
       />
       <div className="overflow-hidden rounded-lg">
         <div
@@ -47,7 +51,7 @@ export default function Title({
           <Button
             className={cn('w-20 h-8 text-lg')}
             disabled={!ready || loading}
-            label={!loading ? logo : <FaWallet />}
+            label={!loading ? logo : loadingLabel ?? <FaWallet />}
             onClick={onClick}
           />
         </div>

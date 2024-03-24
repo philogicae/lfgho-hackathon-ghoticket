@@ -18,14 +18,15 @@ import { useNavigate, useParams } from 'react-router-dom'
 //import { useChains } from 'connectkit'
 //import { useCall } from '@components/hooks/Caller'
 import { Input } from '@nextui-org/react'
+import Button from '@components/elements/Button'
 
 const inputClassNames = {
-  base: 'p-0 w-[335px]',
+  base: 'p-0',
   label: '!text-white truncate text-sm font-mono',
-  mainWrapper: 'h-9 w-full',
-  inputWrapper:
-    '!rounded-lg !bg-gray-900 py-0 px-1.5 h-9 group-data-[focus=true]:!ring-1 group-data-[focus-visible=true]:!ring-1 !ring-amber-500 *:pb-0',
-  input: '!text-white !bg-black text-left !text-[10px] no-arrow px-1 rounded',
+  mainWrapper: 'h-8 w-full',
+  inputWrapper: '!rounded-md !bg-transparent !p-0 h-8 *:pb-0',
+  input:
+    '!text-white !bg-gray-950 text-left !text-[10px] no-arrow py-[2.5px] rounded group-data-[focus=true]:!ring-1 group-data-[focus-visible=true]:!ring-1 !ring-amber-500 mx-1.5 !text-center',
 }
 
 const isValidAddrOrENS = (input?: string) =>
@@ -34,6 +35,7 @@ const isValidAddrOrENS = (input?: string) =>
     (input.length === 42 && isAddress(input)))
 
 export default function Track() {
+  const navigate = useNavigate()
   const { wallet } = useParams()
   const [addr, setAddr] = useState<string | undefined>()
   const { data: dataEns, refetch: fetchEns } = useEnsAddress({
@@ -49,8 +51,7 @@ export default function Track() {
         ? fetchEns().then((x) => setAddr(x.data as Address))
         : setAddr(wallet)
   }, [wallet])
-
-  const navigate = useNavigate()
+  const [tab, setTab] = useState(0)
   //const { isConnected, address } = useAccount()
   /* const chains = useChains()
   const contracts = chains
@@ -76,10 +77,12 @@ export default function Track() {
   useEffect(() => {
     isLoading && setTimeout(() => setIsLoading(false), 2000)
   }, [isLoading])
+  const test = 1
   return (
     <>
       <Title
         label="Tracking"
+        loadingLabel={<span className="text-sm">REFRESHING</span>}
         logo={<FaMagnifyingGlass className="transform -scale-x-100" />}
         loading={isLoading}
         ready={!isLoading}
@@ -90,75 +93,101 @@ export default function Track() {
           'flex flex-col h-full min-w-[320px] max-w-[700px] border border-cyan-400 mt-2 items-center justify-start overflow-hidden rounded-xl bg-blue-800 bg-opacity-10 w-full'
         )}
       >
-        <div className="border-b-1 text-cyan-300 border-cyan-300 flex flex-row w-full h-14 items-center justify-center font-mono tracking-tighter text-base bg-black">
-          <div className="flex flex-row p-0 items-center justify-center">
+        <div className="border-b-1 text-cyan-300 border-cyan-300 flex flex-col sm:flex-row w-full *:w-[330px] items-center justify-center font-mono tracking-tighter text-base bg-transparent pb-1.5 sm:pb-0">
+          <div className="flex flex-row p-0 h-9 items-center justify-center">
             <Input
-              name="amount"
+              name="wallet"
               size="sm"
               type="text"
               placeholder="Enter address or ENS"
-              //value={wallet}
+              value={'0x0000000000000000000000000000000000000000'}
               maxLength={42}
               onChange={() => {}}
               classNames={inputClassNames}
               startContent={
                 <button
                   className={cn(
-                    'text-sm cursor-pointer border-1 rounded p-0.5 mr-1.5',
-                    false
-                      ? 'text-amber-500 border-amber-500 '
-                      : 'text-gray-500 border-gray-500 '
+                    'text-sm border-1 rounded p-0.5',
+                    test
+                      ? 'text-amber-500 border-amber-500 cursor-pointer hover:bg-gray-800'
+                      : 'text-gray-600 border-gray-600 pointer-events-none'
                   )}
                   //onClick={() => address && navigate('/track/' + address)}
                 >
-                  <FaWallet className="w-4 h-4 px-0.5" />
+                  <FaWallet className="w-5 h-5 px-0.5" />
                 </button>
               }
               endContent={
-                <>
-                  <button
-                    className="text-sm cursor-pointer text-amber-500 border-1 border-amber-500 rounded ml-1.5 p-0.5"
-                    onClick={() =>
-                      navigator.clipboard
-                        .readText()
-                        .then(
-                          (pasted) =>
-                            isValidAddrOrENS(pasted) &&
-                            navigate('/track/' + pasted)
-                        )
-                    }
-                  >
-                    <FaPaste className="w-4 h-4 px-0.5" />
-                  </button>
-                  <button
-                    className="text-sm cursor-pointer text-amber-500 ml-1 border-1 border-amber-500 rounded p-0.5"
-                    onClick={() =>
-                      wallet &&
-                      navigator.share({
-                        url: window.location.origin + `/#/track/${wallet}`,
-                      })
-                    }
-                  >
-                    <FaShareFromSquare className="w-4 h-4 px-0.5" />
-                  </button>
-                </>
+                <button
+                  className={cn(
+                    'text-sm cursor-pointer border-1 rounded p-0.5 text-amber-500 border-amber-500 hover:bg-gray-800'
+                  )}
+                  onClick={() =>
+                    navigator.clipboard
+                      .readText()
+                      .then(
+                        (pasted) =>
+                          isValidAddrOrENS(pasted) &&
+                          navigate('/track/' + pasted)
+                      )
+                  }
+                >
+                  <FaPaste className="w-5 h-5 px-0.5" />
+                </button>
               }
+            />
+          </div>
+          <div className="flex flex-row p-0 h-6 sm:ml-1.5 w-full items-center justify-between">
+            <button
+              className={cn(
+                'text-sm border-1 rounded p-0.5',
+                test
+                  ? 'text-cyan-300 border-cyan-300 cursor-pointer hover:bg-gray-800'
+                  : 'text-gray-600 border-gray-600 pointer-events-none'
+              )}
+              onClick={() =>
+                wallet &&
+                navigator.share({
+                  url: window.location.origin + `/#/track/${wallet}`,
+                })
+              }
+            >
+              <FaShareFromSquare className="w-5 h-5 px-0.5" />
+            </button>
+            <Button
+              label="Orders"
+              className={cn(
+                'w-[131px] h-[25.5px] text-base  bg-gray-950 rounded border-1 border-cyan-300 hover:bg-gray-950',
+                tab === 0
+                  ? 'border-amber-500 text-amber-500 pointer-events-none font-bold'
+                  : 'border-cyan-300 text-cyan-300 hover:bg-gray-800'
+              )}
+              onClick={() => {
+                setTab(0)
+              }}
+            />
+            <Button
+              label="Tickets"
+              className={cn(
+                'w-[131px] h-[25.5px] text-base bg-gray-950 rounded border-1 border-cyan-300 hover:bg-gray-950',
+                tab === 1
+                  ? 'border-amber-500 text-amber-500 pointer-events-none font-bold'
+                  : 'border-cyan-300 text-cyan-300 hover:bg-gray-800'
+              )}
+              onClick={() => {
+                setTab(1)
+              }}
             />
             <button
               className={cn(
-                'text-sm cursor-pointer border-1 rounded p-0.5 ml-1.5',
-                true
-                  ? 'text-cyan-300 border-cyan-300 '
-                  : 'text-gray-500 border-gray-500 '
+                'text-sm border-1 rounded p-0.5',
+                test
+                  ? 'text-cyan-300 border-cyan-300 cursor-pointer hover:bg-gray-800'
+                  : 'text-gray-600 border-gray-600 pointer-events-none'
               )}
-              onClick={() => setIsLoading(true)}
+              onClick={() => !isLoading && setIsLoading(true)}
             >
-              <FaArrowsRotate
-                className={cn(
-                  'w-4 h-4 px-0.5',
-                  isLoading ? 'animate-spin' : ''
-                )}
-              />
+              <FaArrowsRotate className="w-5 h-5 px-0.5" />
             </button>
           </div>
         </div>

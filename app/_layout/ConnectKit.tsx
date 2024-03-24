@@ -107,7 +107,7 @@ const transports = Object.assign(
       http(
         `https://${subdomain[chain.name]}.blastapi.io/${blastapi2}${chain.name === 'Avalanche' ? '/ext/bc/C/rpc' : ''}`
       ),
-      http(chain.rpcUrls.default.http[0]),
+      http(),
     ]),
   }))
 )
