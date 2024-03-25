@@ -1,6 +1,6 @@
 {
   "name": "lfgho-hackathon-ghoticket",
-  "description": "Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!ing cash!",
+  "description": "Create claimable tickets to send ERC20 tokens without specifying any wallet address. Simple as using cash!",
   "version": "0.9.4",
   "repository": "https://github.com/philogicae/lfgho-hackathon-ghoticket",
   "private": false,
