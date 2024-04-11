@@ -46,4 +46,10 @@ artifacts
 # Deployments
 .vercel
 fleek.config.json
-.aleph
+
+# Python
+.python-version
+aleph-im/api/__pycache__
+aleph-im/api/static
+aleph-im/packages
+aleph-im/*.squashfs

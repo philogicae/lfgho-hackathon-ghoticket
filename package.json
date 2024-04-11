@@ -22,7 +22,14 @@
     "compile": "hardhat compile",
     "deploy-gho": "hardhat run scripts/deploy-gho.js --network",
     "deploy": "hardhat run scripts/deploy-qrflow.js --network",
-    "verify": "hardhat verify --network"
+    "verify": "hardhat verify --network",
+    "pip-install": "./aleph-im/scripts/pip-install.sh",
+    "pip-build": "./aleph-im/scripts/pip-build.sh",
+    "pip-upload": "./aleph-im/scripts/pip-upload.sh",
+    "dev-api": "./aleph-im/scripts/dev-api.sh",
+    "aleph": "./aleph-im/scripts/deploy-no-pip.sh",
+    "aleph-with-pip": "./aleph-im/scripts/deploy-with-pip.sh",
+    "set-domain": "./aleph-im/scripts/set-domain.sh"
   },
   "dependencies": {
     "@covalenthq/client-sdk": "^0.8.9",
@@ -48,7 +55,7 @@
     "@nomicfoundation/hardhat-verify": "^2.0.5",
     "@openzeppelin/contracts": "^5.0.2",
     "@types/node": "^20.11.30",
-    "@types/react": "^18.2.70",
+    "@types/react": "^18.2.71",
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",

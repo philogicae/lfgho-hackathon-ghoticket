@@ -1,0 +1,4 @@
+typing-extensions==4.5.0
+codetiming
+fastapi==0.103.2
+requests
