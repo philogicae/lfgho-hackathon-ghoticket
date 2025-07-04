@@ -4,9 +4,7 @@ LFGHO Hackathon Project 2024
 
 ## Deployments
 
-- Centralized Main: https://qrflow.xyz
-- Decentralized Main: https://qrflow.on-fleek.app
-- Decentralized Legacy: https://ghoticket.on-fleek.app
+- Vercel demo: https://qrflow.vercel.app
 
 ## Main Idea
 
